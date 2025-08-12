@@ -11,10 +11,23 @@
   </head>
   <body>
     <div class="app">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-logo">🐾</div>
-          <div class="brand-name">OC 宠物系统</div>
+      <!-- 移动端菜单按钮 -->
+      <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="打开宠物列表">
+        <span class="menu-icon">🐾</span>
+        <span class="menu-text">宠物列表</span>
+      </button>
+
+      <!-- 侧边栏 - 桌面端显示 -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">
+            <div class="brand-logo">🐾</div>
+            <div class="brand-name">OC 宠物系统</div>
+          </div>
+          <!-- 移动端关闭按钮 -->
+          <button id="close-sidebar-btn" class="close-sidebar-btn" aria-label="关闭宠物列表">
+            <span>✕</span>
+          </button>
         </div>
 
         <div class="sidebar-actions">
@@ -33,11 +46,35 @@
         <ul id="pet-list" class="pet-list" aria-label="宠物列表"></ul>
       </aside>
 
+      <!-- 移动端宠物列表弹出层 -->
+      <div id="mobile-pet-overlay" class="mobile-pet-overlay">
+        <div class="mobile-pet-drawer">
+          <div class="drawer-header">
+            <h3>我的宠物</h3>
+            <button id="close-mobile-pet" class="close-btn" aria-label="关闭">
+              <span>✕</span>
+            </button>
+          </div>
+          <div class="drawer-content">
+            <div class="mobile-actions">
+              <button id="mobile-export-btn" class="btn btn-secondary">
+                <span class="btn-emoji">⬇️</span> 导出
+              </button>
+              <label for="mobile-import-input" class="btn btn-secondary">
+                <span class="btn-emoji">⬆️</span> 导入
+              </label>
+              <input id="mobile-import-input" type="file" accept="application/json" hidden />
+            </div>
+            <ul id="mobile-pet-list" class="mobile-pet-list" aria-label="宠物列表"></ul>
+          </div>
+        </div>
+      </div>
+
       <main class="main">
         <section id="empty-state" class="empty-state">
           <div class="empty-emoji">🏠</div>
           <h2>请选择宠物</h2>
-          <p>从左侧列表选择一只固定宠物进行互动。</p>
+          <p>从宠物列表选择一只宠物进行互动。</p>
         </section>
 
         <section id="pet-detail" class="pet-detail hidden" aria-live="polite">
@@ -89,6 +126,68 @@
                     </div>
                   </div>
                 </div>
+              
+              <!-- 小游戏（内嵌到右侧状态面板） -->
+              <div id="play-panel" class="play-panel hidden" aria-labelledby="play-panel-title">
+                <div class="play-panel-header">
+                  <h4 id="play-panel-title">小游戏</h4>
+                  <button id="play-inline-close" class="btn btn-secondary btn-compact" title="收起">收起</button>
+                </div>
+                <div class="tabs" role="tablist" aria-label="小游戏类型">
+                  <button class="tab-button active" data-tab="riddle" role="tab" aria-selected="true">猜谜语</button>
+                  <button class="tab-button" data-tab="joke" role="tab" aria-selected="false">讲笑话</button>
+                  <button class="tab-button" data-tab="soup" role="tab" aria-selected="false">海龟汤</button>
+                  <button class="tab-button" data-tab="number" role="tab" aria-selected="false">数字猜数</button>
+                </div>
+                <div class="tab-panels">
+                  <section class="tab-panel" data-panel="riddle">
+                    <div class="game-block">
+                      <div id="riddle-question" class="game-question">—</div>
+                      <div class="game-actions">
+                        <input id="riddle-input" class="game-input" type="text" placeholder="输入你的答案" />
+                        <button id="riddle-submit" class="btn btn-primary">提交</button>
+                      </div>
+                      <div class="game-secondary-actions">
+                        <button id="riddle-hint" class="btn btn-secondary">提示</button>
+                        <button id="riddle-reveal" class="btn btn-secondary">揭晓</button>
+                        <button id="riddle-next" class="btn btn-secondary">换一题</button>
+                      </div>
+                      <div id="riddle-feedback" class="game-feedback"></div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="joke">
+                    <div class="game-block">
+                      <div id="joke-text" class="game-question">—</div>
+                      <div class="game-actions">
+                        <button id="joke-laugh" class="btn btn-primary">哈哈</button>
+                        <button id="joke-next" class="btn btn-secondary">换一个</button>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="soup">
+                    <div class="game-block">
+                      <div id="soup-story" class="game-question">—</div>
+                      <div class="game-actions">
+                        <button id="soup-hint" class="btn btn-secondary">提示</button>
+                        <button id="soup-answer" class="btn btn-secondary">揭晓</button>
+                        <button id="soup-next" class="btn btn-secondary">换一题</button>
+                      </div>
+                      <div id="soup-extra" class="game-feedback"></div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="number">
+                    <div class="game-block">
+                      <div id="number-desc" class="game-question">我想了一个 1-20 的数字，来猜猜看！</div>
+                      <div class="game-actions">
+                        <input id="number-input" class="game-input" type="number" min="1" max="20" placeholder="1-20" />
+                        <button id="number-submit" class="btn btn-primary">提交</button>
+                        <button id="number-restart" class="btn btn-secondary">重开</button>
+                      </div>
+                      <div id="number-feedback" class="game-feedback"></div>
+                    </div>
+                  </section>
+                </div>
+              </div>
                 
                 <div class="stat-item">
                   <div class="stat-icon">😊</div>
@@ -143,28 +242,29 @@
                 </div>
               </div>
 
-              <!-- 操作按钮区 -->
-              <div class="actions-panel">
-                <h4 class="actions-title">互动操作</h4>
-                <div class="actions">
-                  <button id="feed-btn" class="btn action-btn">
-                    <span class="action-emoji">🍖</span>
-                    <span class="action-text">喂食</span>
-                  </button>
-                  <button id="play-btn" class="btn action-btn">
-                    <span class="action-emoji">🪀</span>
-                    <span class="action-text">玩耍</span>
-                  </button>
-                  <button id="sleep-btn" class="btn action-btn">
-                    <span class="action-emoji">🛌</span>
-                    <span class="action-text">睡觉</span>
-                  </button>
-                  <button id="clean-btn" class="btn action-btn">
-                    <span class="action-emoji">🧼</span>
-                    <span class="action-text">清洁</span>
-                  </button>
-                </div>
-              </div>
+            </div>
+          </div>
+
+          <!-- 操作按钮区（移动到宠物容器下方） -->
+          <div class="actions-panel">
+            <h4 class="actions-title">互动操作</h4>
+            <div class="actions">
+              <button id="feed-btn" class="btn action-btn">
+                <span class="action-emoji">🍖</span>
+                <span class="action-text">喂食</span>
+              </button>
+              <button id="play-btn" class="btn action-btn">
+                <span class="action-emoji">🪀</span>
+                <span class="action-text">玩耍</span>
+              </button>
+              <button id="sleep-btn" class="btn action-btn">
+                <span class="action-emoji">🛌</span>
+                <span class="action-text">睡觉</span>
+              </button>
+              <button id="clean-btn" class="btn action-btn">
+                <span class="action-emoji">🧼</span>
+                <span class="action-text">清洁</span>
+              </button>
             </div>
           </div>
 
@@ -174,8 +274,6 @@
         </section>
       </main>
     </div>
-
-    
 
     <script src="js/app.js"></script>
   </body>

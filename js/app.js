@@ -412,8 +412,35 @@
     render();
   }
 
+  // 完成小游戏后给予奖励
+  function rewardAfterMiniGame(kind) {
+    const bonus = kind === 'joke' ? 8 : kind === 'riddle' ? 12 : kind === 'soup' ? 15 : 10;
+    updateSelected((pet) => {
+      const updated = {
+        ...pet,
+        happiness: clamp(pet.happiness + bonus, 0, 100),
+        energy: clamp(pet.energy - 5, 0, 100),
+      };
+      return gainXpAndMaybeLevelUp(updated, Math.ceil(bonus / 2));
+    });
+  }
+
   feedBtn.addEventListener('click', () => updateSelected(ACTIONS.feed));
-  playBtn.addEventListener('click', () => updateSelected(ACTIONS.play));
+  // 打开/收起右侧内嵌小游戏面板
+  playBtn.addEventListener('click', () => {
+    const panel = document.getElementById('play-panel');
+    if (!panel) return;
+    const willShow = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !willShow);
+    if (willShow) {
+      initRiddle();
+      initJoke();
+      initSoup();
+      initNumberGame(true);
+      setActiveTab('riddle');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
   sleepBtn.addEventListener('click', () => updateSelected(ACTIONS.sleep));
   cleanBtn.addEventListener('click', () => updateSelected(ACTIONS.clean));
 
@@ -488,6 +515,285 @@
 
   // ---------- Initial Render ----------
   render();
+
+  // ---------- Mini Games (Play) ----------
+  const playInlineClose = document.getElementById('play-inline-close');
+
+  function setActiveTab(key) {
+    document.querySelectorAll('.tab-button').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === key);
+      btn.setAttribute('aria-selected', String(btn.dataset.tab === key));
+    });
+    document.querySelectorAll('.tab-panel').forEach((panel) => {
+      panel.classList.toggle('hidden', panel.dataset.panel !== key);
+    });
+  }
+
+  document.querySelectorAll('.tab-button').forEach((btn) => {
+    btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+  });
+
+  playInlineClose && playInlineClose.addEventListener('click', () => {
+    const panel = document.getElementById('play-panel');
+    panel && panel.classList.add('hidden');
+  });
+
+  // 猜谜语
+  const RIDDLES = [
+    { q: '什么东西有很多牙齿，却从不咬人？', a: '梳子', h: '每天用来打理头发' },
+    { q: '什么门永远关不上？', a: '球门', h: '绿茵场上' },
+    { q: '什么东西总是向上，却从不下降？', a: '年龄', h: '和生日有关' },
+  ];
+  let riddleIndex = 0;
+  function initRiddle() {
+    riddleIndex = Math.floor(Math.random() * RIDDLES.length);
+    const item = RIDDLES[riddleIndex];
+    const q = document.getElementById('riddle-question');
+    const fb = document.getElementById('riddle-feedback');
+    q && (q.textContent = item.q);
+    fb && (fb.textContent = '');
+    const input = document.getElementById('riddle-input');
+    input && (input.value = '');
+  }
+  function nextRiddle() { riddleIndex = (riddleIndex + 1) % RIDDLES.length; initRiddle(); }
+  document.getElementById('riddle-submit')?.addEventListener('click', () => {
+    const input = document.getElementById('riddle-input');
+    const fb = document.getElementById('riddle-feedback');
+    const ans = (input?.value || '').trim();
+    const item = RIDDLES[riddleIndex];
+    if (!ans) { fb && (fb.textContent = '先输入答案呀～'); return; }
+    if (ans === item.a) { fb && (fb.textContent = '答对啦！奖励+'); rewardAfterMiniGame('riddle'); }
+    else { fb && (fb.textContent = '差一点点，再想想～'); }
+  });
+  document.getElementById('riddle-hint')?.addEventListener('click', () => {
+    const fb = document.getElementById('riddle-feedback');
+    const item = RIDDLES[riddleIndex];
+    fb && (fb.textContent = `提示：${item.h}`);
+  });
+  document.getElementById('riddle-reveal')?.addEventListener('click', () => {
+    const fb = document.getElementById('riddle-feedback');
+    const item = RIDDLES[riddleIndex];
+    fb && (fb.textContent = `答案：${item.a}`);
+  });
+  document.getElementById('riddle-next')?.addEventListener('click', () => nextRiddle());
+
+  // 讲笑话
+  const JOKES = [
+    '我本来想减肥的，后来想想，胖点更有福气。',
+    '程序员的键盘上，最常按的是F5，因为他们喜欢刷新自己。',
+    '昨天去跑步了，结果跑丢了，坚持不下去了。',
+  ];
+  let jokeIndex = 0;
+  function initJoke() {
+    jokeIndex = Math.floor(Math.random() * JOKES.length);
+    const j = document.getElementById('joke-text');
+    j && (j.textContent = JOKES[jokeIndex]);
+  }
+  document.getElementById('joke-laugh')?.addEventListener('click', () => {
+    rewardAfterMiniGame('joke');
+    const j = document.getElementById('joke-text');
+    j && (j.textContent += ' 😂');
+  });
+  document.getElementById('joke-next')?.addEventListener('click', () => {
+    jokeIndex = (jokeIndex + 1) % JOKES.length;
+    const j = document.getElementById('joke-text');
+    j && (j.textContent = JOKES[jokeIndex]);
+  });
+
+  // 海龟汤（简化为故事+提示+答案）
+  const SOUPS = [
+    { s: '一个人走进餐厅点了海龟汤，喝完后哭了。为什么？', h: '与过去经历相关', a: '他曾在海难中被救起，后来发现当时并不是海龟汤。' },
+    { s: '深夜路口红灯亮着，没有车也没有人，一个人却一直不过。为什么？', h: '职业相关', a: '他是交警，正在值守。' },
+  ];
+  let soupIndex = 0;
+  function initSoup() {
+    soupIndex = Math.floor(Math.random() * SOUPS.length);
+    const s = document.getElementById('soup-story');
+    const extra = document.getElementById('soup-extra');
+    s && (s.textContent = SOUPS[soupIndex].s);
+    extra && (extra.textContent = '');
+  }
+  document.getElementById('soup-hint')?.addEventListener('click', () => {
+    const extra = document.getElementById('soup-extra');
+    extra && (extra.textContent = '提示：' + SOUPS[soupIndex].h);
+  });
+  document.getElementById('soup-answer')?.addEventListener('click', () => {
+    const extra = document.getElementById('soup-extra');
+    extra && (extra.textContent = '答案：' + SOUPS[soupIndex].a);
+    rewardAfterMiniGame('soup');
+  });
+  document.getElementById('soup-next')?.addEventListener('click', () => {
+    soupIndex = (soupIndex + 1) % SOUPS.length;
+    const s = document.getElementById('soup-story');
+    const extra = document.getElementById('soup-extra');
+    s && (s.textContent = SOUPS[soupIndex].s);
+    extra && (extra.textContent = '');
+  });
+
+  // 数字猜数（1-20）
+  let numberSecret = 0;
+  function initNumberGame(reset) {
+    numberSecret = Math.floor(Math.random() * 20) + 1;
+    if (reset) {
+      const f = document.getElementById('number-feedback');
+      const i = document.getElementById('number-input');
+      f && (f.textContent = '');
+      i && (i.value = '');
+    }
+  }
+  document.getElementById('number-submit')?.addEventListener('click', () => {
+    const i = document.getElementById('number-input');
+    const f = document.getElementById('number-feedback');
+    const val = Number(i?.value || 0);
+    if (!val) { f && (f.textContent = '请输入 1-20 的数字'); return; }
+    if (val === numberSecret) { f && (f.textContent = '你猜对了！🎉'); rewardAfterMiniGame('number'); initNumberGame(true); }
+    else if (val < numberSecret) { f && (f.textContent = '再大一点～'); }
+    else { f && (f.textContent = '再小一点～'); }
+  });
+  document.getElementById('number-restart')?.addEventListener('click', () => initNumberGame(true));
+
+  // ---------- Mobile Sidebar Logic ----------
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobilePetOverlay = document.getElementById('mobile-pet-overlay');
+  const closeMobilePetBtn = document.getElementById('close-mobile-pet');
+  const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+  const mobileExportBtn = document.getElementById('mobile-export-btn');
+  const mobileImportInput = document.getElementById('mobile-import-input');
+
+  // 移动端菜单按钮点击事件
+  mobileMenuBtn && mobileMenuBtn.addEventListener('click', () => {
+    mobilePetOverlay.style.display = 'block';
+    // 强制重排后添加active类
+    requestAnimationFrame(() => {
+      mobilePetOverlay.classList.add('active');
+    });
+    // 同步移动端宠物列表
+    syncMobilePetList();
+  });
+
+  // 关闭移动端宠物列表
+  closeMobilePetBtn && closeMobilePetBtn.addEventListener('click', () => {
+    mobilePetOverlay.classList.remove('active');
+    setTimeout(() => {
+      mobilePetOverlay.style.display = 'none';
+    }, 300);
+  });
+
+  // 点击遮罩层关闭
+  mobilePetOverlay && mobilePetOverlay.addEventListener('click', (e) => {
+    if (e.target === mobilePetOverlay) {
+      mobilePetOverlay.classList.remove('active');
+      setTimeout(() => {
+        mobilePetOverlay.style.display = 'none';
+      }, 300);
+    }
+  });
+
+  // 触摸手势支持 - 左滑关闭
+  let startX = 0;
+  let startY = 0;
+  
+  mobilePetOverlay && mobilePetOverlay.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  
+  mobilePetOverlay && mobilePetOverlay.addEventListener('touchend', (e) => {
+    if (!mobilePetOverlay.classList.contains('active')) return;
+    
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = startX - endX;
+    const deltaY = Math.abs(startY - endY);
+    
+    // 左滑超过100px且垂直移动不超过50px时关闭
+    if (deltaX > 100 && deltaY < 50) {
+      mobilePetOverlay.classList.remove('active');
+      setTimeout(() => {
+        mobilePetOverlay.style.display = 'none';
+      }, 300);
+    }
+  }, { passive: true });
+
+  // 移动端导入导出功能
+  mobileExportBtn && mobileExportBtn.addEventListener('click', () => {
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    a.href = url;
+    a.download = `oc-pets-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  mobileImportInput && mobileImportInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const incoming = JSON.parse(text);
+      if (!incoming || !Array.isArray(incoming.pets)) throw new Error('格式不正确');
+      if (!confirm('导入将替换当前数据，是否继续？')) return;
+      state = {
+        pets: (incoming.pets || []).map((p) => ({ ...p, lastUpdated: p.lastUpdated ?? nowMs() })),
+        selectedPetId: incoming.selectedPetId ?? null
+      };
+      // 固定三只并追帧
+      state = ensureFixedPets(state);
+      state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
+      saveState(state);
+      render();
+    } catch (err) {
+      alert('导入失败：' + (err?.message || '未知错误'));
+    } finally {
+      mobileImportInput.value = '';
+    }
+  });
+
+  // 同步移动端宠物列表
+  function syncMobilePetList() {
+    const mobilePetList = document.getElementById('mobile-pet-list');
+    if (!mobilePetList) return;
+    
+    mobilePetList.innerHTML = '';
+    state.pets.forEach((pet, index) => {
+      const li = document.createElement('li');
+      li.className = `pet-item ${index === state.selectedPetIndex ? 'active' : ''}`;
+      li.innerHTML = `
+        <span class="pet-emoji">${speciesToEmoji(pet.species)}</span>
+        <div class="pet-item-main">
+          <span class="pet-item-name">${pet.name}</span>
+          <span class="pill">${pet.species}</span>
+        </div>
+      `;
+      
+      li.addEventListener('click', () => {
+        selectPet(index);
+        // 关闭移动端列表
+        mobilePetOverlay.classList.remove('active');
+        setTimeout(() => {
+          mobilePetOverlay.style.display = 'none';
+        }, 300);
+      });
+      
+      mobilePetList.appendChild(li);
+    });
+  }
+
+  // 更新原有的renderPetList函数，同时更新移动端列表
+  const originalRenderPetList = renderPetList;
+  renderPetList = function() {
+    originalRenderPetList();
+    // 如果移动端列表是打开的，同步更新
+    if (mobilePetOverlay.classList.contains('active')) {
+      syncMobilePetList();
+    }
+  };
 
   // ---------- Interaction Particles ----------
   const effectsEl = document.getElementById('pet-effects');

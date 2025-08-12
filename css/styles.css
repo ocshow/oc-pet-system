@@ -782,6 +782,38 @@ body {
 
 .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
+/* 小游戏弹窗 */
+.dialog-title { margin: 0 0 12px 0; font-size: 18px; font-weight: 700; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.tab-button { 
+  padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(148,163,184,0.25); 
+  background: rgba(2,6,23,0.25); color: var(--text); cursor: pointer; 
+}
+.tab-button.active { border-color: #ff86b2; background: rgba(255,134,178,0.18); }
+.tab-panels { background: rgba(2,6,23,0.2); border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 12px; }
+.tab-panel.hidden { display: none; }
+.game-block { display: grid; gap: 12px; }
+.game-question { background: rgba(255,255,255,0.06); border: 1px dashed rgba(255,134,178,0.25); padding: 12px; border-radius: 12px; line-height: 1.6; }
+.game-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.game-secondary-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.game-input { flex: 1; min-width: 160px; background: rgba(2, 6, 23, 0.35); border: 1px solid rgba(148, 163, 184, 0.22); color: var(--text); padding: 10px 12px; border-radius: 12px; }
+.game-feedback { min-height: 20px; color: #ffb8d2; font-weight: 600; }
+
+/* 内嵌小游戏面板 */
+.play-panel { 
+  margin-top: 8px; 
+  padding-top: 16px; 
+  border-top: 2px dashed rgba(255, 134, 178, 0.2);
+}
+.play-panel.hidden { display: none; }
+.play-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.play-panel-header h4 { margin: 0; font-size: 16px; font-weight: 800; }
+.btn-compact { padding: 8px 12px; }
+
+/* 右侧面板下的 tabs 自适应收缩 */
+.pet-status-panel .tabs { margin-top: 6px; }
+.pet-status-panel .tab-panels { background: rgba(255,255,255,0.5); border-color: rgba(255,134,178,0.25); }
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .pet-content {
@@ -795,8 +827,21 @@ body {
 }
 
 @media (max-width: 920px) {
-  .app { grid-template-columns: 1fr; }
-  .sidebar { height: auto; border-right: none; border-bottom: 1px solid rgba(148, 163, 184, 0.15); }
+  .app { 
+    grid-template-columns: 1fr; 
+    padding-top: 80px; /* 为移动端菜单按钮留出空间 */
+  }
+  
+  /* 隐藏桌面端侧边栏 */
+  .sidebar { 
+    display: none; 
+  }
+  
+  /* 显示移动端菜单按钮 */
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+  }
   
   .pet-content {
     grid-template-columns: 1fr;
@@ -818,5 +863,294 @@ body {
   .actions {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* 操作面板（放在宠物容器下方后的布局微调） */
+  .actions-panel {
+    margin-top: 16px;
+  }
+
+  .play-panel { margin-top: 12px; }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 16px 20px;
+  }
+  
+  .pet-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .actions {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .action-btn {
+    padding: 16px;
+    font-size: 16px;
+  }
+  
+  .mobile-menu-btn {
+    top: 16px;
+    left: 16px;
+    padding: 10px 16px;
+  }
+  
+  .mobile-menu-btn .menu-text {
+    font-size: 13px;
+  }
+}
+
+/* 移动端菜单按钮 */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background: linear-gradient(135deg, #ffd6e9, #c8f7dc);
+  border: none;
+  border-radius: 50px;
+  padding: 12px 20px;
+  box-shadow: 0 8px 24px rgba(255, 134, 178, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mobile-menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255, 134, 178, 0.4);
+}
+
+.mobile-menu-btn .menu-icon {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+.mobile-menu-btn .menu-text {
+  font-size: 14px;
+}
+
+/* 侧边栏头部 */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.close-sidebar-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.close-sidebar-btn:hover {
+  background: rgba(255, 134, 178, 0.1);
+  color: var(--text);
+}
+
+/* 移动端宠物列表弹出层 */
+.mobile-pet-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-pet-overlay.active {
+  opacity: 1;
+}
+
+.mobile-pet-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-pet-overlay.active .mobile-pet-drawer {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 134, 178, 0.2);
+  background: var(--panel);
+  position: relative;
+}
+
+.drawer-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 134, 178, 0.3), transparent);
+}
+
+.drawer-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 134, 178, 0.1);
+  color: var(--text);
+  transform: scale(1.1);
+}
+
+.close-btn:active {
+  transform: scale(0.95);
+}
+
+.drawer-content {
+  padding: 20px;
+  height: calc(100% - 80px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
+}
+
+.mobile-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.mobile-pet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-pet-list .pet-item {
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+  border: 2px dashed rgba(255, 134, 178, 0.35);
+  box-shadow: 0 8px 16px rgba(255, 134, 178, 0.12);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-pet-list .pet-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 134, 178, 0.05), rgba(200, 247, 220, 0.05));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-pet-list .pet-item:hover::before {
+  opacity: 1;
+}
+
+.mobile-pet-list .pet-item:hover {
+  border-color: rgba(255, 134, 178, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(255, 134, 178, 0.2);
+}
+
+.mobile-pet-list .pet-item:active {
+  transform: translateY(0);
+  transition: transform 0.1s ease;
+}
+
+.mobile-pet-list .pet-item.active {
+  border-color: var(--primary-strong);
+  background: #fff0f7;
+  box-shadow: 0 8px 20px rgba(255, 134, 178, 0.25);
+}
+
+.mobile-pet-list .pet-item.active::before {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(255, 134, 178, 0.1), rgba(200, 247, 220, 0.1));
+}
+
+/* 触摸反馈动画 */
+@keyframes touch-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.mobile-pet-list .pet-item:active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 134, 178, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: touch-ripple 0.6s ease-out;
 }
 
