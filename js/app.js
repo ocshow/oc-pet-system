@@ -239,8 +239,6 @@
   const emptyStateEl = $('#empty-state');
   const detailEl = $('#pet-detail');
   // 删除创建入口
-  const exportBtn = $('#export-btn');
-  const importInput = $('#import-input');
 
   const nameEl = $('#pet-name');
   const speciesEl = $('#pet-species');
@@ -458,45 +456,7 @@
 
   // 移除创建相关逻辑
 
-  // ---------- Import / Export ----------
-  exportBtn.addEventListener('click', () => {
-    const data = JSON.stringify(state, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const d = new Date();
-    const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-    a.href = url;
-    a.download = `oc-pets-${dateStr}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
 
-  importInput.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const incoming = JSON.parse(text);
-      if (!incoming || !Array.isArray(incoming.pets)) throw new Error('格式不正确');
-      if (!confirm('导入将替换当前数据，是否继续？')) return;
-      state = {
-        pets: (incoming.pets || []).map((p) => ({ ...p, lastUpdated: p.lastUpdated ?? nowMs() })),
-        selectedPetId: incoming.selectedPetId ?? null
-      };
-      // 固定三只并追帧
-      state = ensureFixedPets(state);
-      state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
-      saveState(state);
-      render();
-    } catch (err) {
-      alert('导入失败：' + (err?.message || '未知错误'));
-    } finally {
-      importInput.value = '';
-    }
-  });
 
   // ---------- Ticker ----------
   setInterval(() => {
@@ -657,8 +617,6 @@
   const mobilePetOverlay = document.getElementById('mobile-pet-overlay');
   const closeMobilePetBtn = document.getElementById('close-mobile-pet');
   const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-  const mobileExportBtn = document.getElementById('mobile-export-btn');
-  const mobileImportInput = document.getElementById('mobile-import-input');
 
   // 移动端菜单按钮点击事件
   mobileMenuBtn && mobileMenuBtn.addEventListener('click', () => {
@@ -715,45 +673,7 @@
     }
   }, { passive: true });
 
-  // 移动端导入导出功能
-  mobileExportBtn && mobileExportBtn.addEventListener('click', () => {
-    const data = JSON.stringify(state, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const d = new Date();
-    const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-    a.href = url;
-    a.download = `oc-pets-${dateStr}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
 
-  mobileImportInput && mobileImportInput.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const incoming = JSON.parse(text);
-      if (!incoming || !Array.isArray(incoming.pets)) throw new Error('格式不正确');
-      if (!confirm('导入将替换当前数据，是否继续？')) return;
-      state = {
-        pets: (incoming.pets || []).map((p) => ({ ...p, lastUpdated: p.lastUpdated ?? nowMs() })),
-        selectedPetId: incoming.selectedPetId ?? null
-      };
-      // 固定三只并追帧
-      state = ensureFixedPets(state);
-      state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
-      saveState(state);
-      render();
-    } catch (err) {
-      alert('导入失败：' + (err?.message || '未知错误'));
-    } finally {
-      mobileImportInput.value = '';
-    }
-  });
 
   // 同步移动端宠物列表
   function syncMobilePetList() {

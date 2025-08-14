@@ -65,16 +65,7 @@ body {
 
 .brand-name { font-weight: 800; letter-spacing: 0.5px; }
 
-.sidebar-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
 
-.import-export {
-  display: flex;
-  gap: 8px;
-}
 
 .pet-list-header {
   margin-top: 18px;
@@ -143,26 +134,73 @@ body {
 .pet-detail.hidden,
 .hidden { display: none; }
 
+/* 宠物头部新布局 */
 .pet-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
+  margin-bottom: 20px;
 }
 
 .pet-overview {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  flex: 1;
 }
 
-/* 头部不再展示小头像，保留样式删除 */
+.pet-info-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 
 .pet-name {
   margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
 }
 
-.header-actions { display: flex; gap: 8px; }
+.pill {
+  font-size: 12px;
+  color: #7a7a7a;
+  background: #ffe3f0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.btn-inline {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(255, 134, 178, 0.3);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-inline:hover {
+  background: rgba(255, 134, 178, 0.1);
+  border-color: rgba(255, 134, 178, 0.5);
+  transform: translateY(-1px);
+}
+
+/* 小游戏面板移动到状态面板顶部 */
+.play-panel {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px dashed rgba(255, 134, 178, 0.2);
+}
+
+.play-panel:not(.hidden) {
+  margin-bottom: 20px;
+}
+
+/* 移除旧的头部操作样式 */
 
 
 
@@ -340,7 +378,6 @@ body {
 }
 
 /* 状态面板内容层级 */
-.status-header,
 .stats-container,
 .actions-panel {
   position: relative;
@@ -352,58 +389,7 @@ body {
   50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
 }
 
-/* 状态面板头部 */
-.status-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px dashed rgba(255, 134, 178, 0.2);
-  position: relative;
-}
-
-.status-header::after {
-  content: '💕';
-  position: absolute;
-  bottom: -8px;
-  right: 0;
-  font-size: 12px;
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.status-emoji {
-  font-size: 24px;
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-content: center;
-  background: linear-gradient(135deg, #ffd6e9, #c8f7dc);
-  border-radius: 16px;
-  box-shadow: 0 8px 16px rgba(255, 134, 178, 0.2);
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
-}
-
-.status-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-  background: linear-gradient(135deg, #ff86b2, #a5d8ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+/* 移除不再使用的状态标题样式 */
 
 /* 状态容器 */
 .stats-container {
@@ -839,7 +825,7 @@ body {
   
   /* 显示移动端菜单按钮 */
   .mobile-menu-btn {
-    display: flex;
+    display: flex !important;
     align-items: center;
   }
   
@@ -883,9 +869,18 @@ body {
     gap: 12px;
   }
   
-  .header-actions {
-    width: 100%;
-    justify-content: flex-end;
+  .pet-info-row {
+    gap: 12px;
+  }
+  
+  .pill {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  
+  .btn-inline {
+    padding: 5px 10px;
+    font-size: 11px;
   }
   
   .actions {
@@ -1063,12 +1058,7 @@ body {
   -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
 }
 
-.mobile-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
+
 
 .mobile-pet-list {
   list-style: none;

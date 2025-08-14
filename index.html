@@ -30,17 +30,7 @@
           </button>
         </div>
 
-        <div class="sidebar-actions">
-          <div class="import-export">
-            <button id="export-btn" class="btn btn-secondary" title="导出数据">
-              <span class="btn-emoji">⬇️</span> 导出
-            </button>
-            <label for="import-input" class="btn btn-secondary" title="导入数据">
-              <span class="btn-emoji">⬆️</span> 导入
-            </label>
-            <input id="import-input" type="file" accept="application/json" hidden />
-          </div>
-        </div>
+
 
         <div class="pet-list-header">我的宠物</div>
         <ul id="pet-list" class="pet-list" aria-label="宠物列表"></ul>
@@ -56,15 +46,7 @@
             </button>
           </div>
           <div class="drawer-content">
-            <div class="mobile-actions">
-              <button id="mobile-export-btn" class="btn btn-secondary">
-                <span class="btn-emoji">⬇️</span> 导出
-              </button>
-              <label for="mobile-import-input" class="btn btn-secondary">
-                <span class="btn-emoji">⬆️</span> 导入
-              </label>
-              <input id="mobile-import-input" type="file" accept="application/json" hidden />
-            </div>
+
             <ul id="mobile-pet-list" class="mobile-pet-list" aria-label="宠物列表"></ul>
           </div>
         </div>
@@ -80,16 +62,12 @@
         <section id="pet-detail" class="pet-detail hidden" aria-live="polite">
           <header class="pet-header">
             <div class="pet-overview">
-              <div>
+              <div class="pet-info-row">
                 <h2 id="pet-name" class="pet-name">—</h2>
-                <div class="pet-meta">
-                  <span id="pet-species" class="pill">—</span>
-                  <span id="pet-level" class="pill">幼年期</span>
-                </div>
+                <span id="pet-species" class="pill">—</span>
+                <span id="pet-level" class="pill">幼年期</span>
+                <button id="rename-btn" class="btn btn-secondary btn-inline" title="重命名">✏️ 重命名</button>
               </div>
-            </div>
-            <div class="header-actions">
-              <button id="rename-btn" class="btn btn-secondary" title="重命名">✏️ 重命名</button>
             </div>
           </header>
 
@@ -108,10 +86,70 @@
                 <span class="heart">💕</span>
                 <span class="heart">💗</span>
               </div>
-              <div class="status-header">
-                <div class="status-emoji">📊</div>
-                <h3 class="status-title">宠物状态</h3>
+              
+              <!-- 小游戏（移动到状态面板顶部） -->
+              <div id="play-panel" class="play-panel hidden" aria-labelledby="play-panel-title">
+                <div class="play-panel-header">
+                  <h4 id="play-panel-title">小游戏</h4>
+                  <button id="play-inline-close" class="btn btn-secondary btn-compact" title="收起">收起</button>
+                </div>
+                <div class="tabs" role="tablist" aria-label="小游戏类型">
+                  <button class="tab-button active" data-tab="riddle" role="tab" aria-selected="true">猜谜语</button>
+                  <button class="tab-button" data-tab="joke" role="tab" aria-selected="false">讲笑话</button>
+                  <button class="tab-button" data-tab="soup" role="tab" aria-selected="false">海龟汤</button>
+                  <button class="tab-button" data-tab="number" role="tab" aria-selected="false">数字猜数</button>
+                </div>
+                <div class="tab-panels">
+                  <section class="tab-panel" data-panel="riddle">
+                    <div class="game-block">
+                      <div id="riddle-question" class="game-question">—</div>
+                      <div class="game-actions">
+                        <input id="riddle-input" class="game-input" type="text" placeholder="输入你的答案" />
+                        <button id="riddle-submit" class="btn btn-primary">提交</button>
+                      </div>
+                      <div class="game-secondary-actions">
+                        <button id="riddle-hint" class="btn btn-secondary">提示</button>
+                        <button id="riddle-reveal" class="btn btn-secondary">揭晓</button>
+                        <button id="riddle-next" class="btn btn-secondary">换一题</button>
+                      </div>
+                      <div id="riddle-feedback" class="game-feedback"></div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="joke">
+                    <div class="game-block">
+                      <div id="joke-text" class="game-question">—</div>
+                      <div class="game-actions">
+                        <button id="joke-laugh" class="btn btn-primary">哈哈</button>
+                        <button id="joke-next" class="btn btn-secondary">换一个</button>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="soup">
+                    <div class="game-block">
+                      <div id="soup-story" class="game-question">—</div>
+                      <div class="game-actions">
+                        <button id="soup-hint" class="btn btn-secondary">提示</button>
+                        <button id="soup-answer" class="btn btn-secondary">揭晓</button>
+                        <button id="soup-next" class="btn btn-secondary">换一题</button>
+                      </div>
+                      <div id="soup-extra" class="game-feedback"></div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="number">
+                    <div class="game-block">
+                      <div id="number-desc" class="game-question">我想了一个 1-20 的数字，来猜猜看！</div>
+                      <div class="game-actions">
+                        <input id="number-input" class="game-input" type="number" min="1" max="20" placeholder="1-20" />
+                        <button id="number-submit" class="btn btn-primary">提交</button>
+                        <button id="number-restart" class="btn btn-secondary">重开</button>
+                      </div>
+                      <div id="number-feedback" class="game-feedback"></div>
+                    </div>
+                  </section>
+                </div>
               </div>
+              
+
               
               <div class="stats-container">
                 <div class="stat-item">
