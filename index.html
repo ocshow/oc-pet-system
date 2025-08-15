@@ -19,20 +19,6 @@
 
       <!-- 侧边栏 - 桌面端显示 -->
       <aside id="sidebar" class="sidebar">
-        <div class="sidebar-header">
-          <div class="brand">
-            <div class="brand-logo">🐾</div>
-            <div class="brand-name">OC 宠物系统</div>
-          </div>
-          <!-- 移动端关闭按钮 -->
-          <button id="close-sidebar-btn" class="close-sidebar-btn" aria-label="关闭宠物列表">
-            <span>✕</span>
-          </button>
-        </div>
-
-
-
-        <div class="pet-list-header">我的宠物</div>
         <ul id="pet-list" class="pet-list" aria-label="宠物列表"></ul>
       </aside>
 
@@ -72,10 +58,34 @@
           </header>
 
           <div class="pet-content">
-            <!-- 左侧宠物展示区 -->
-            <div class="pet-stage">
-              <img id="pet-stage-image" alt="宠物" />
-              <div id="pet-effects" class="pet-effects" aria-hidden="true"></div>
+            <div class="pet-left">
+              <!-- 左侧宠物展示区 -->
+              <div class="pet-stage">
+                <!-- 互动操作（悬浮在宠物图片边缘） -->
+                <div class="actions-panel">
+                  <h4 class="actions-title">互动操作</h4>
+                  <div class="actions">
+                    <button id="feed-btn" class="btn action-btn">
+                      <span class="action-emoji">🍖</span>
+                      <span class="action-text">喂食</span>
+                    </button>
+                    <button id="play-btn" class="btn action-btn">
+                      <span class="action-emoji">🪀</span>
+                      <span class="action-text">玩耍</span>
+                    </button>
+                    <button id="sleep-btn" class="btn action-btn">
+                      <span class="action-emoji">🛌</span>
+                      <span class="action-text">睡觉</span>
+                    </button>
+                    <button id="clean-btn" class="btn action-btn">
+                      <span class="action-emoji">🧼</span>
+                      <span class="action-text">清洁</span>
+                    </button>
+                  </div>
+                </div>
+                <img id="pet-stage-image" alt="宠物" />
+                <div id="pet-effects" class="pet-effects" aria-hidden="true"></div>
+              </div>
             </div>
 
             <!-- 右侧状态信息区 -->
@@ -97,7 +107,7 @@
                   <button class="tab-button active" data-tab="riddle" role="tab" aria-selected="true">猜谜语</button>
                   <button class="tab-button" data-tab="joke" role="tab" aria-selected="false">讲笑话</button>
                   <button class="tab-button" data-tab="soup" role="tab" aria-selected="false">海龟汤</button>
-                  <button class="tab-button" data-tab="number" role="tab" aria-selected="false">数字猜数</button>
+                  <button class="tab-button" data-tab="number" role="tab" aria-selected="false">猜数字</button>
                 </div>
                 <div class="tab-panels">
                   <section class="tab-panel" data-panel="riddle">
@@ -128,6 +138,11 @@
                     <div class="game-block">
                       <div id="soup-story" class="game-question">—</div>
                       <div class="game-actions">
+                        <input id="soup-guess-input" class="game-input" type="text" placeholder="输入你认为的真相或提问（可直接猜答案）" />
+                        <button id="soup-guess-submit" class="btn btn-primary">提交猜测</button>
+                      </div>
+                      <div id="soup-guess-feedback" class="game-feedback"></div>
+                      <div class="game-secondary-actions">
                         <button id="soup-hint" class="btn btn-secondary">提示</button>
                         <button id="soup-answer" class="btn btn-secondary">揭晓</button>
                         <button id="soup-next" class="btn btn-secondary">换一题</button>
@@ -283,28 +298,7 @@
             </div>
           </div>
 
-          <!-- 操作按钮区（移动到宠物容器下方） -->
-          <div class="actions-panel">
-            <h4 class="actions-title">互动操作</h4>
-            <div class="actions">
-              <button id="feed-btn" class="btn action-btn">
-                <span class="action-emoji">🍖</span>
-                <span class="action-text">喂食</span>
-              </button>
-              <button id="play-btn" class="btn action-btn">
-                <span class="action-emoji">🪀</span>
-                <span class="action-text">玩耍</span>
-              </button>
-              <button id="sleep-btn" class="btn action-btn">
-                <span class="action-emoji">🛌</span>
-                <span class="action-text">睡觉</span>
-              </button>
-              <button id="clean-btn" class="btn action-btn">
-                <span class="action-emoji">🧼</span>
-                <span class="action-text">清洁</span>
-              </button>
-            </div>
-          </div>
+          
 
           <footer class="footer">
             <span id="last-updated">—</span>

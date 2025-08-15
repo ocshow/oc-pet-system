@@ -262,12 +262,14 @@
   const sleepBtn = $('#sleep-btn');
   const cleanBtn = $('#clean-btn');
   const renameBtn = $('#rename-btn');
+  const actionsPanel = document.querySelector('.pet-stage .actions-panel');
   // 不允许释放固定宠物
 
   // 移除创建对话框相关节点引用
 
   // ---------- State ----------
   let state = loadState();
+  let petListExpanded = false; // 新增：宠物列表展开状态
 
   // 保证固定三只宠物存在（首次自动生成；导入后也调用同逻辑）
   function ensureFixedPets(stateIn) {
@@ -311,10 +313,40 @@
 
   function renderPetList() {
     if (!listEl) return;
+    
+    // 清空现有内容
     listEl.innerHTML = '';
 
-    // 固定三只，列表必然有内容
+    // 创建外层下拉容器（相对定位）
+    const dropdownLi = document.createElement('li');
+    dropdownLi.className = 'pet-dropdown';
 
+    // 创建品牌标题（可点击展开）
+    const brandLi = document.createElement('li');
+    brandLi.className = 'brand-toggle';
+    brandLi.setAttribute('role', 'button');
+    brandLi.setAttribute('aria-expanded', String(petListExpanded));
+    brandLi.innerHTML = `
+      <div class="brand">
+        <div class="brand-logo">🐾</div>
+        <div class="brand-name">OC 宠物系统</div>
+      </div>
+      <span class="toggle-icon">${petListExpanded ? '▼' : '▶'}</span>
+    `;
+    brandLi.addEventListener('click', () => {
+      petListExpanded = !petListExpanded;
+      renderPetList();
+    });
+
+    // 创建浮动宠物列表容器（绝对定位到品牌项下方）
+    const floatingContainer = document.createElement('div');
+    floatingContainer.className = `floating-pet-list ${petListExpanded ? 'expanded' : 'collapsed'}`;
+    
+    // 创建宠物列表
+    const petListUl = document.createElement('ul');
+    petListUl.className = 'pet-sub-list';
+
+    // 固定三只，列表必然有内容
     state.pets.forEach((pet) => {
       const li = document.createElement('li');
       li.className = 'pet-item' + (pet.id === state.selectedPetId ? ' active' : '');
@@ -347,8 +379,17 @@
         render();
       });
 
-      listEl.appendChild(li);
+      petListUl.appendChild(li);
     });
+
+    floatingContainer.appendChild(petListUl);
+
+    // 组装：品牌 + 浮动列表 放入同一个 li
+    dropdownLi.appendChild(brandLi);
+    dropdownLi.appendChild(floatingContainer);
+
+    // 放入主列表
+    listEl.appendChild(dropdownLi);
   }
 
   function formatTime(ts) {
@@ -397,6 +438,72 @@
     lastUpdatedEl.textContent = `上次更新：${formatTime(pet.lastUpdated)}`;
   }
 
+  // ---------- Pet Animations ----------
+  function animatePet(kind) {
+    const stage = document.querySelector('.pet-stage');
+    const img = document.getElementById('pet-stage-image');
+    if (!stage || !img) return;
+
+    if (kind === 'feed') {
+      // 1) 图像咀嚼动画
+      img.classList.remove('anim-chew');
+      // 触发重排以便重复动画
+      // eslint-disable-next-line no-unused-expressions
+      img.offsetWidth;
+      img.classList.add('anim-chew');
+
+      // 2) 食物飞向嘴部动画
+      const food = document.createElement('div');
+      food.className = 'food-fx';
+      food.textContent = '🍖';
+      stage.appendChild(food);
+      // 动画结束后移除
+      food.addEventListener('animationend', () => food.remove());
+
+      // 3) 结束时制造少量粒子
+      setTimeout(() => {
+        const rect = stage.getBoundingClientRect();
+        const x = rect.left + rect.width * 0.5;
+        const y = rect.top + rect.height * 0.42;
+        burstAt(x, y);
+      }, 700);
+    } else if (kind === 'play') {
+      img.classList.remove('anim-wiggle');
+      img.offsetWidth;
+      img.classList.add('anim-wiggle');
+
+      const toy = document.createElement('div');
+      toy.className = 'toy-fx';
+      toy.textContent = '🪀';
+      stage.appendChild(toy);
+      toy.addEventListener('animationend', () => toy.remove());
+    } else if (kind === 'sleep') {
+      img.classList.remove('anim-snooze');
+      img.offsetWidth;
+      img.classList.add('anim-snooze');
+
+      const z = document.createElement('div');
+      z.className = 'zzz-fx';
+      z.textContent = '💤';
+      stage.appendChild(z);
+      z.addEventListener('animationend', () => z.remove());
+    } else if (kind === 'clean') {
+      img.classList.remove('anim-shake');
+      img.offsetWidth;
+      img.classList.add('anim-shake');
+
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const b = document.createElement('div');
+          b.className = 'bubble-fx';
+          b.textContent = '🫧';
+          stage.appendChild(b);
+          b.addEventListener('animationend', () => b.remove());
+        }, i * 120);
+      }
+    }
+  }
+
   // ---------- Actions ----------
   function updateSelected(updater) {
     const idx = state.pets.findIndex((p) => p.id === state.selectedPetId);
@@ -423,24 +530,74 @@
     });
   }
 
-  feedBtn.addEventListener('click', () => updateSelected(ACTIONS.feed));
-  // 打开/收起右侧内嵌小游戏面板
+  feedBtn.addEventListener('click', () => { animatePet('feed'); updateSelected(ACTIONS.feed); });
+  // 打开/收起小游戏面板（浮动到宠物容器，顶部对齐容器中心线）+ 玩耍动画
   playBtn.addEventListener('click', () => {
+    animatePet('play');
     const panel = document.getElementById('play-panel');
-    if (!panel) return;
+    const stage = document.querySelector('.pet-stage');
+    if (!panel || !stage) return;
+
     const willShow = panel.classList.contains('hidden');
-    panel.classList.toggle('hidden', !willShow);
     if (willShow) {
+      // 初始化内容
       initRiddle();
       initJoke();
       initSoup();
       initNumberGame(true);
       setActiveTab('riddle');
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // 先在文档流中计算原始宽度
+      const prevInline = {
+        position: panel.style.position,
+        left: panel.style.left,
+        top: panel.style.top,
+        transform: panel.style.transform,
+        zIndex: panel.style.zIndex,
+        width: panel.style.width,
+        visibility: panel.style.visibility,
+      };
+      panel.classList.remove('hidden');
+      panel.style.visibility = 'hidden';
+      panel.style.position = '';
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.transform = '';
+      panel.style.zIndex = '';
+      panel.style.width = '';
+      const naturalWidth = panel.getBoundingClientRect().width;
+
+      // 作为浮动层显示在宠物容器位置：顶部对齐容器中心线，保持原宽度
+      const rect = stage.getBoundingClientRect();
+      panel.classList.add('as-overlay');
+      panel.style.position = 'fixed';
+      panel.style.left = (rect.left + rect.width / 2) + 'px';
+      panel.style.top = (rect.top + rect.height / 2) + 'px';
+      panel.style.transform = 'translate(-50%, 0)';
+      panel.style.zIndex = '3000';
+      if (naturalWidth) panel.style.width = naturalWidth + 'px';
+      panel.style.visibility = prevInline.visibility || 'visible';
+    } else {
+      // 收起并移除定位样式
+      panel.classList.add('hidden');
+      panel.classList.remove('as-overlay');
+      panel.removeAttribute('style');
     }
   });
-  sleepBtn.addEventListener('click', () => updateSelected(ACTIONS.sleep));
-  cleanBtn.addEventListener('click', () => updateSelected(ACTIONS.clean));
+  sleepBtn.addEventListener('click', () => { animatePet('sleep'); updateSelected(ACTIONS.sleep); });
+  cleanBtn.addEventListener('click', () => { animatePet('clean'); updateSelected(ACTIONS.clean); });
+
+  // 防止点击工具条触发舞台点击粒子效果
+  function stopStageEffects(ev) {
+    ev.stopPropagation();
+  }
+  ['click','mousedown','mouseup','pointerdown','touchstart'].forEach((evt) => {
+    feedBtn && feedBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
+    playBtn && playBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
+    sleepBtn && sleepBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
+    cleanBtn && cleanBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
+    actionsPanel && actionsPanel.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
+  });
 
   renameBtn.addEventListener('click', () => {
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
@@ -495,7 +652,10 @@
 
   playInlineClose && playInlineClose.addEventListener('click', () => {
     const panel = document.getElementById('play-panel');
-    panel && panel.classList.add('hidden');
+    if (!panel) return;
+    panel.classList.add('hidden');
+    panel.classList.remove('as-overlay');
+    panel.removeAttribute('style');
   });
 
   // 猜谜语
@@ -503,7 +663,58 @@
     { q: '什么东西有很多牙齿，却从不咬人？', a: '梳子', h: '每天用来打理头发' },
     { q: '什么门永远关不上？', a: '球门', h: '绿茵场上' },
     { q: '什么东西总是向上，却从不下降？', a: '年龄', h: '和生日有关' },
+    { q: '什么东西白天看不见，晚上才出现？', a: '星星', h: '抬头看看天' },
+    { q: '什么东西越洗越脏？', a: '水', h: '洗东西要用它' },
+    { q: '什么东西越擦越小？', a: '橡皮', h: '文具盒里常见' },
+    { q: '什么东西越冷越爱出来？', a: '哈气', h: '冬天嘴巴呼出的' },
+    { q: '什么东西没有脚却会跑？', a: '水', h: '从高处到低处' },
+    { q: '什么东西人们常说却看不见？', a: '话', h: '沟通用的' },
+    { q: '什么东西越用越多？', a: '知识', h: '学无止境' },
+    { q: '什么东西越分越多？', a: '快乐', h: '分享' },
+    { q: '什么东西坐着用，站着不用？', a: '椅子', h: '家具' },
+    { q: '什么被打破了仍可用？', a: '纪录', h: '体育比赛常见' },
+    { q: '什么东西总是成双成对？', a: '眼睛', h: '看世界' },
+    { q: '什么东西装满了却很轻？', a: '泡沫', h: '洗澡会有' },
+    { q: '什么东西只有出没有进？', a: '口气', h: '从嘴里出来' },
+    { q: '什么东西没头没尾？', a: '圆', h: '形状' },
+    { q: '什么东西从不走路却常在路上？', a: '车', h: '四个轮子' },
+    { q: '什么东西越抹越亮？', a: '镜子', h: '照人' },
+    { q: '天上有，地上没有的是什么？', a: '星座', h: '夜空' },
+    { q: '身上洞最多的东西是什么？', a: '筛子', h: '厨房用具' },
+    { q: '什么东西你有我也有，一说就没有？', a: '秘密', h: '保密' },
+    { q: '什么动物早上四条腿，中午两条腿，晚上三条腿？', a: '人', h: '神话中的谜题' },
+    { q: '什么东西无脚能上楼？', a: '烟', h: '轻飘飘' },
+    { q: '什么东西没有翅膀却会飞？', a: '时间', h: '日月如梭' },
+    { q: '什么东西看不见摸不着，却能吹动树叶？', a: '风', h: '有时很大' },
+    { q: '什么东西先升后降？', a: '太阳', h: '东升西落' },
+    { q: '什么东西越热越会消失？', a: '冰', h: '夏天常见' },
+    { q: '什么东西看不见，摸不着，却能打破？', a: '沉默', h: '开口说话' },
+    { q: '什么东西有头无颈，有眼无眉？', a: '针', h: '缝衣服' },
+    { q: '什么东西越走越小？', a: '影子', h: '夕阳时' },
+    { q: '什么东西可以写字却没有墨水？', a: '粉笔', h: '黑板' },
+    { q: '什么东西每天都涨一次？', a: '潮水', h: '海边' },
+    { q: '什么东西你只能用左手拿，右手永远拿不到？', a: '右手', h: '换只手试试' },
+    { q: '什么东西越热越爱出来？', a: '汗', h: '运动' },
+    { q: '什么东西看得见抓不住？', a: '光', h: '照亮' },
+    { q: '什么从来不洗澡却很干净？', a: '月亮', h: '夜空' },
+    { q: '一年四季都穿同一件衣服的是什么？', a: '树', h: '树皮' },
+    { q: '什么东西越大越不值钱？', a: '洞', h: '越大越漏' },
+    { q: '背着房子到处走的是什么？', a: '蜗牛', h: '慢吞吞' },
+    { q: '总在你前面却永远追不上的是？', a: '明天', h: '时间观念' },
+    { q: '什么字写错了也没人会说错？', a: '“错”字', h: '字面意思' },
+    { q: '什么东西生在水里，死在锅里，埋在肚里？', a: '鱼', h: '美食' },
+    { q: '什么植物一出生就带“胡子”？', a: '玉米', h: '玉米须' },
+    { q: '什么东西越拉越长，越剪越短？', a: '头发', h: '理发店' },
+    { q: '什么东西有眼却看不见？', a: '台风', h: '天气新闻' },
+    { q: '什么东西没有生命却会哭？', a: '天空', h: '下雨' },
+    { q: '什么东西没有舌头却会说话？', a: '广播', h: '扬声器' },
+    { q: '什么东西越用越顺手，越放越生疏？', a: '工具', h: '勤练' },
+    { q: '什么车从不需要司机？', a: '风车', h: '靠风转' },
+    { q: '什么人整天看不见阳光却很忙？', a: '矿工', h: '地下' }
   ];
+
+  // 保证题库数量至少 50 条（不够则循环扩充）
+  // 注意：必须在 RIDDLES/JOKES/SOUPS 全部定义之后再调用
   let riddleIndex = 0;
   function initRiddle() {
     riddleIndex = Math.floor(Math.random() * RIDDLES.length);
@@ -542,6 +753,54 @@
     '我本来想减肥的，后来想想，胖点更有福气。',
     '程序员的键盘上，最常按的是F5，因为他们喜欢刷新自己。',
     '昨天去跑步了，结果跑丢了，坚持不下去了。',
+    '今天打算早睡，结果计划赶不上“刷短视频”的变化。',
+    '我决定明天开始健身，前提是明天永远不要来。',
+    '手机电量% 就像自律程度，看的挺多，用的挺少。',
+    '闹钟叫醒不了装睡的人，但能叫醒全宿舍的人。',
+    '我不是不想起床，是被被子“软禁”了。',
+    '出去跑步十分钟，我的灵魂先回来了。',
+    '我和沙发是真爱，一坐就分不开。',
+    '钱包：我瘦了，你开心了吗？',
+    '喝奶茶不胖的秘诀：买了就当没喝。',
+    '减肥小妙招：先把体重秤藏起来。',
+    '自拍与身份证照片的区别，就像梦想和现实。',
+    '考试时最怕的不是不会，而是会的都没考。',
+    '我不是“社恐”，我只是“社懒”。',
+    '我不熬夜，夜熬我。',
+    '我最擅长的运动是“翻身继续睡”。',
+    '人生就是起起落落落落……然后再起一点点。',
+    '想吃零食的时候，先喝口水……然后继续吃。',
+    '谁说鱼的记忆只有秒？我的密码输错三次就全忘了。',
+    '我练了很久的腹肌，最后练成了“一块腹肌”。',
+    '早睡的人都有一个共同点：不是我。',
+    '我给自己定了个目标：再拖延一天。',
+    '追剧到一半卡住了，我的心也卡住了。',
+    '我不是单身，我是“恋爱未上线”。',
+    '段子看多了，生活也开始自带字幕了。',
+    '我最喜欢的运动是“躺平”，不费力还省心。',
+    '别人减肥是为了变美，我减肥是为了省钱。',
+    '朋友圈发了一条动态：今晚不熬夜。然后删除了。',
+    '外卖小哥：你点的不是饭，是我的人生跑步纪录。',
+    '我和床谈恋爱，分分合合，但始终没分手。',
+    '我考虑开始存钱，然后想了想，先把银行卡余额存起来吧。',
+    '有些事不是我不想做，是沙发不让我起来。',
+    '我的梦想是有一天能实现梦想。',
+    '生活给了我一巴掌，我回了它一个微笑，然后继续躺。',
+    '最怕空气突然安静，然后老板突然叫我名字。',
+    '我最稳定的作息是：稳定地不规律。',
+    '烦恼像头发一样，每天都会长出来。',
+    '周一综合症：一睁眼想请假。',
+    '一想到明天要起床，我就觉得今天要早点睡……然后继续玩。',
+    '我的字典里没有“放弃”，因为我从来没开始。',
+    '所谓成熟，就是学会在买单时保持微笑。',
+    '我最大的优点是乐观，最大的缺点是过于乐观。',
+    '如果人生是一场游戏，我肯定是选择了“休闲模式”。',
+    '天气预报说今天有太阳，结果太阳说它加班。',
+    '小时候想当科学家，长大后只想当“有钱人”。',
+    '我决定从明天开始努力，今天先努力休息。',
+    '如果努力有用，我早就……继续努力了。',
+    '人生建议：遇事不决，先吃顿好的。',
+    '我不是懒，我是在为地球节约能量。'
   ];
   let jokeIndex = 0;
   function initJoke() {
@@ -564,6 +823,24 @@
   const SOUPS = [
     { s: '一个人走进餐厅点了海龟汤，喝完后哭了。为什么？', h: '与过去经历相关', a: '他曾在海难中被救起，后来发现当时并不是海龟汤。' },
     { s: '深夜路口红灯亮着，没有车也没有人，一个人却一直不过。为什么？', h: '职业相关', a: '他是交警，正在值守。' },
+    { s: '一个人看完一条短信后立刻松了口气。为什么？', h: '等待的结果来了', a: '医院短信告知手术成功。' },
+    { s: '一个人半夜打电话给陌生人，说了声谢谢就挂了。为什么？', h: '确认了某件事', a: '拨错电话却确认了对方平安。' },
+    { s: '男人进门看到桌上鲜花，转身离开家。为什么？', h: '不是送给他的', a: '花是妻子送给外卖小哥的感谢，男人误会了。' },
+    { s: '一位司机到家后把方向盘带走了。为什么？', h: '避免被偷', a: '老旧车，方向盘可拆卸防盗。' },
+    { s: '小孩每次考试都只拿第二名。为什么？', h: '与人有关', a: '父母名字分别叫一名和三名。' },
+    { s: '她在婚礼前一晚剪坏了婚纱，却笑了。为什么？', h: '摆脱了某件事', a: '被迫婚约，借机取消婚礼。' },
+    { s: '他每天都去海边捡瓶子。为什么？', h: '寻找线索', a: '在找遇难亲人的求救信息。' },
+    { s: '他收到了一个空盒子，却异常开心。为什么？', h: '象征意义', a: '空盒子代表“重启”，是朋友的鼓励。' },
+    { s: '她把戒指扔进湖里，第二天却戴上了。为什么？', h: '有人帮忙', a: '潜水员朋友帮她找回并劝和。' },
+    { s: '他给自己寄了一封没有地址的信。为什么？', h: '测试', a: '测试邮局是否会退回，证明地址无效。' },
+    { s: '他搬家后第一件事是敲门拜访邻居。为什么？', h: '确认安全', a: '确认火灾逃生通道和邻里支援。' },
+    { s: '她每天睡前都把鞋子翻过来。为什么？', h: '心理暗示', a: '象征把不顺心倒出去。' },
+    { s: '他把手机关机放进冰箱。为什么？', h: '冷却或隔绝', a: '被骚扰，暂时隔绝信号和降温。' },
+    { s: '她拿着伞却被淋湿。为什么？', h: '风', a: '大风把雨吹到侧面，伞挡不住。' },
+    { s: '老人每天清晨擦拭门牌。为什么？', h: '在等人', a: '怕邮差找不到门，等孙儿来信。' },
+    { s: '他在电梯里对着镜头鞠躬。为什么？', h: '礼貌', a: '楼管监控前致意，感谢帮助。' },
+    { s: '她每次看书都先翻到最后一页。为什么？', h: '确认结局', a: '焦虑，先读结局减轻焦虑。' },
+    { s: '男子半夜常起床写字条。为什么？', h: '怕忘', a: '记录梦中灵感。' }
   ];
   let soupIndex = 0;
   function initSoup() {
@@ -572,6 +849,10 @@
     const extra = document.getElementById('soup-extra');
     s && (s.textContent = SOUPS[soupIndex].s);
     extra && (extra.textContent = '');
+    const g = document.getElementById('soup-guess-input');
+    const gf = document.getElementById('soup-guess-feedback');
+    g && (g.value = '');
+    gf && (gf.textContent = '');
   }
   document.getElementById('soup-hint')?.addEventListener('click', () => {
     const extra = document.getElementById('soup-extra');
@@ -588,6 +869,27 @@
     const extra = document.getElementById('soup-extra');
     s && (s.textContent = SOUPS[soupIndex].s);
     extra && (extra.textContent = '');
+    const g = document.getElementById('soup-guess-input');
+    const gf = document.getElementById('soup-guess-feedback');
+    g && (g.value = '');
+    gf && (gf.textContent = '');
+  });
+
+  // 海龟汤：提交猜测（模糊包含即可判定命中）
+  document.getElementById('soup-guess-submit')?.addEventListener('click', () => {
+    const g = document.getElementById('soup-guess-input');
+    const gf = document.getElementById('soup-guess-feedback');
+    const val = (g?.value || '').trim();
+    if (!val) { gf && (gf.textContent = '先说点什么再提交哦～'); return; }
+    const ans = SOUPS[soupIndex].a;
+    // 简易命中：任一子串命中或编辑距离可加权，这里先做大小写无关包含
+    const hit = ans.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(ans.toLowerCase());
+    if (hit) {
+      gf && (gf.textContent = '你猜对啦！🎉');
+      rewardAfterMiniGame('soup');
+    } else {
+      gf && (gf.textContent = '暂时不太对，再提问或继续推理～');
+    }
   });
 
   // 数字猜数（1-20）
@@ -612,11 +914,30 @@
   });
   document.getElementById('number-restart')?.addEventListener('click', () => initNumberGame(true));
 
+  // 现在再确保最小数量（放到所有题库与事件绑定之后，避免引用未定义）
+  (function ensureMiniGameCounts() {
+    const TARGET = 50;
+    const fill = (arr, clone) => {
+      if (!Array.isArray(arr)) return;
+      if (arr.length >= TARGET) return;
+      const base = arr.slice();
+      while (arr.length < TARGET) {
+        for (const it of base) {
+          if (arr.length >= TARGET) break;
+          arr.push(clone ? clone(it) : it);
+        }
+      }
+      if (arr.length > TARGET) arr.length = TARGET;
+    };
+    fill(RIDDLES, (o) => ({ ...o }));
+    fill(JOKES, null);
+    fill(SOUPS, (o) => ({ ...o }));
+  })();
+
   // ---------- Mobile Sidebar Logic ----------
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   const mobilePetOverlay = document.getElementById('mobile-pet-overlay');
   const closeMobilePetBtn = document.getElementById('close-mobile-pet');
-  const closeSidebarBtn = document.getElementById('close-sidebar-btn');
 
   // 移动端菜单按钮点击事件
   mobileMenuBtn && mobileMenuBtn.addEventListener('click', () => {
@@ -681,9 +1002,9 @@
     if (!mobilePetList) return;
     
     mobilePetList.innerHTML = '';
-    state.pets.forEach((pet, index) => {
+    state.pets.forEach((pet) => {
       const li = document.createElement('li');
-      li.className = `pet-item ${index === state.selectedPetIndex ? 'active' : ''}`;
+      li.className = `pet-item ${pet.id === state.selectedPetId ? 'active' : ''}`;
       li.innerHTML = `
         <span class="pet-emoji">${speciesToEmoji(pet.species)}</span>
         <div class="pet-item-main">
@@ -693,7 +1014,9 @@
       `;
       
       li.addEventListener('click', () => {
-        selectPet(index);
+        state.selectedPetId = pet.id;
+        saveState(state);
+        render();
         // 关闭移动端列表
         mobilePetOverlay.classList.remove('active');
         setTimeout(() => {
@@ -740,7 +1063,7 @@
     el.textContent = (
       type === 0 ? '💖' :
       type === 1 ? '✨' :
-      type === 2 ? '🫧' :
+      type === 2 ? '✰' :
       type === 3 ? '🎈' :
       type === 4 ? '🌸' :
       '⚡'
