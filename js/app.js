@@ -34,6 +34,138 @@
     }
   };
 
+  function loadPetMedia(species, level) {
+    const safeLevel = LEVELING_DISABLED ? 1 : Math.max(1, Math.min(3, Number(level) || 1));
+    const key = speciesKey(species);
+    const base = `assets/${key}-${safeLevel}`;
+    
+    // 获取视频和图片元素
+    const videoEl = document.getElementById('pet-stage-video');
+    const videoSource = document.getElementById('pet-video-source');
+    const imgEl = document.getElementById('pet-stage-image');
+    
+    if (!videoEl || !videoSource || !imgEl) return;
+    
+    // 设置alt属性
+    const altText = `${species} - ${levelToStage(level)}`;
+    videoEl.alt = altText;
+    imgEl.alt = altText;
+    
+    // 重置显示状态
+    videoEl.style.display = 'none';
+    imgEl.style.display = 'block';
+    
+    // 尝试加载视频（优先WebM，回退到MP4）
+    const webmSource = document.createElement('source');
+    webmSource.src = `${base}.webm`;
+    webmSource.type = 'video/webm';
+    
+    const mp4Source = document.createElement('source');
+    mp4Source.src = `${base}.mp4`;
+    mp4Source.type = 'video/mp4';
+    
+    // 清空现有source元素
+    videoEl.innerHTML = '';
+    videoEl.appendChild(webmSource);
+    videoEl.appendChild(mp4Source);
+    videoEl.appendChild(imgEl); // 添加回退图片
+    
+    videoEl.load();
+    
+    // 设置超时处理
+    const videoTimeout = setTimeout(() => {
+      console.log('视频加载超时，回退到图片');
+      videoEl.style.display = 'none';
+      imgEl.style.display = 'block';
+      
+      // 隐藏视频控制按钮
+      const videoControlBtn = document.getElementById('video-control-btn');
+      if (videoControlBtn) {
+        videoControlBtn.style.display = 'none';
+      }
+      
+      // 隐藏背景处理按钮
+      const videoBgBtn = document.getElementById('video-bg-btn');
+      if (videoBgBtn) {
+        videoBgBtn.style.display = 'none';
+      }
+      
+      loadPetImage(imgEl, species, level);
+    }, 3000); // 3秒超时
+    
+    // 视频加载错误时回退到图片
+    videoEl.onerror = () => {
+      clearTimeout(videoTimeout);
+      console.log('视频加载失败，回退到图片');
+      videoEl.style.display = 'none';
+      imgEl.style.display = 'block';
+      
+      // 隐藏视频控制按钮
+      const videoControlBtn = document.getElementById('video-control-btn');
+      if (videoControlBtn) {
+        videoControlBtn.style.display = 'none';
+      }
+      
+      // 隐藏背景处理按钮
+      const videoBgBtn = document.getElementById('video-bg-btn');
+      if (videoBgBtn) {
+        videoBgBtn.style.display = 'none';
+      }
+      
+      loadPetImage(imgEl, species, level);
+    };
+    
+    // 视频加载成功时隐藏图片
+    videoEl.onloadeddata = () => {
+      clearTimeout(videoTimeout);
+      console.log('视频加载成功');
+      videoEl.style.display = 'block';
+      imgEl.style.display = 'none';
+      
+      // 显示视频控制按钮
+      const videoControlBtn = document.getElementById('video-control-btn');
+      if (videoControlBtn) {
+        videoControlBtn.style.display = 'flex';
+      }
+      
+      // 显示背景处理按钮
+      const videoBgBtn = document.getElementById('video-bg-btn');
+      if (videoBgBtn) {
+        videoBgBtn.style.display = 'flex';
+      }
+      
+      // 重新初始化视频控制（因为按钮现在才显示）
+      setTimeout(() => {
+        initVideoControls();
+      }, 100);
+      
+      // 尝试播放视频
+      videoEl.play().catch(e => {
+        console.log('视频自动播放失败:', e);
+        // 播放失败时仍然显示视频，用户可以手动播放
+      });
+      
+      // 检测视频格式并应用相应的背景处理
+      const videoSrc = videoEl.currentSrc || videoEl.src;
+      if (videoSrc && videoSrc.includes('.webm')) {
+        // WebM格式支持透明通道，使用正常显示
+        videoEl.style.mixBlendMode = 'normal';
+        videoEl.style.backgroundColor = 'transparent';
+      } else {
+        // MP4格式，尝试使用混合模式改善显示
+        videoEl.style.mixBlendMode = 'multiply';
+        videoEl.style.backgroundColor = 'transparent';
+      }
+    };
+    
+    // 视频播放结束时的处理
+    videoEl.onended = () => {
+      // 视频播放结束后重新开始播放（循环）
+      videoEl.currentTime = 0;
+      videoEl.play().catch(e => console.log('视频重新播放失败:', e));
+    };
+  }
+
   function loadPetImage(imgEl, species, level) {
     if (!imgEl) return;
     const safeLevel = LEVELING_DISABLED ? 1 : Math.max(1, Math.min(3, Number(level) || 1));
@@ -406,8 +538,7 @@
     nameEl.textContent = pet.name;
     speciesEl.textContent = pet.species;
     levelEl.textContent = levelToStage(LEVELING_DISABLED ? 1 : pet.level);
-    const stageImg = document.getElementById('pet-stage-image');
-    loadPetImage(stageImg, pet.species, pet.level);
+    loadPetMedia(pet.species, pet.level);
 
     const hungerPercent = pet.hunger;            // 越小越好
     const happinessPercent = pet.happiness;
@@ -441,16 +572,18 @@
   // ---------- Pet Animations ----------
   function animatePet(kind) {
     const stage = document.querySelector('.pet-stage');
+    const video = document.getElementById('pet-stage-video');
     const img = document.getElementById('pet-stage-image');
-    if (!stage || !img) return;
+    const mediaEl = video.style.display !== 'none' ? video : img;
+    if (!stage || !mediaEl) return;
 
     if (kind === 'feed') {
       // 1) 图像咀嚼动画
-      img.classList.remove('anim-chew');
+      mediaEl.classList.remove('anim-chew');
       // 触发重排以便重复动画
       // eslint-disable-next-line no-unused-expressions
-      img.offsetWidth;
-      img.classList.add('anim-chew');
+      mediaEl.offsetWidth;
+      mediaEl.classList.add('anim-chew');
 
       // 2) 食物飞向嘴部动画
       const food = document.createElement('div');
@@ -468,9 +601,9 @@
         burstAt(x, y);
       }, 700);
     } else if (kind === 'play') {
-      img.classList.remove('anim-wiggle');
-      img.offsetWidth;
-      img.classList.add('anim-wiggle');
+      mediaEl.classList.remove('anim-wiggle');
+      mediaEl.offsetWidth;
+      mediaEl.classList.add('anim-wiggle');
 
       const toy = document.createElement('div');
       toy.className = 'toy-fx';
@@ -478,9 +611,9 @@
       stage.appendChild(toy);
       toy.addEventListener('animationend', () => toy.remove());
     } else if (kind === 'sleep') {
-      img.classList.remove('anim-snooze');
-      img.offsetWidth;
-      img.classList.add('anim-snooze');
+      mediaEl.classList.remove('anim-snooze');
+      mediaEl.offsetWidth;
+      mediaEl.classList.add('anim-snooze');
 
       const z = document.createElement('div');
       z.className = 'zzz-fx';
@@ -488,9 +621,9 @@
       stage.appendChild(z);
       z.addEventListener('animationend', () => z.remove());
     } else if (kind === 'clean') {
-      img.classList.remove('anim-shake');
-      img.offsetWidth;
-      img.classList.add('anim-shake');
+      mediaEl.classList.remove('anim-shake');
+      mediaEl.offsetWidth;
+      mediaEl.classList.add('anim-shake');
 
       for (let i = 0; i < 3; i++) {
         setTimeout(() => {
@@ -1123,5 +1256,82 @@
     const t = e.touches[0];
     burstAt(t.clientX, t.clientY);
   }, { passive: true });
+
+  // ---------- Video Controls ----------
+  function initVideoControls() {
+    const videoControlBtn = document.getElementById('video-control-btn');
+    const videoBgBtn = document.getElementById('video-bg-btn');
+    const petVideo = document.getElementById('pet-stage-video');
+
+    console.log('初始化视频控制:', {
+      videoControlBtn: !!videoControlBtn,
+      videoBgBtn: !!videoBgBtn,
+      petVideo: !!petVideo
+    });
+
+    // 背景处理模式
+    const bgModes = ['normal', 'multiply', 'screen', 'overlay'];
+    let currentBgMode = 0;
+
+    if (videoControlBtn && petVideo) {
+      // 视频控制按钮点击事件
+      videoControlBtn.addEventListener('click', () => {
+        console.log('视频控制按钮被点击');
+        if (petVideo.paused) {
+          petVideo.play().then(() => {
+            videoControlBtn.classList.add('paused');
+          }).catch(e => {
+            console.log('视频播放失败:', e);
+          });
+        } else {
+          petVideo.pause();
+          videoControlBtn.classList.remove('paused');
+        }
+      });
+
+      // 监听视频播放状态变化
+      petVideo.addEventListener('play', () => {
+        videoControlBtn.classList.add('paused');
+      });
+
+      petVideo.addEventListener('pause', () => {
+        videoControlBtn.classList.remove('paused');
+      });
+
+      petVideo.addEventListener('ended', () => {
+        videoControlBtn.classList.remove('paused');
+      });
+    }
+
+    if (videoBgBtn && petVideo) {
+      // 背景处理按钮点击事件
+      videoBgBtn.addEventListener('click', () => {
+        console.log('背景处理按钮被点击');
+        // 移除所有背景模式类
+        petVideo.classList.remove('video-bg-normal', 'video-bg-multiply', 'video-bg-screen', 'video-bg-overlay');
+        
+        // 切换到下一个模式
+        currentBgMode = (currentBgMode + 1) % bgModes.length;
+        const newMode = bgModes[currentBgMode];
+        
+        // 应用新的背景模式
+        petVideo.classList.add(`video-bg-${newMode}`);
+        
+        // 更新按钮提示
+        const modeNames = {
+          'normal': '正常',
+          'multiply': '正片叠底',
+          'screen': '滤色',
+          'overlay': '叠加'
+        };
+        videoBgBtn.title = `背景处理: ${modeNames[newMode]}`;
+        
+        console.log(`切换到背景模式: ${newMode}`);
+      });
+    }
+  }
+
+  // 初始化视频控制
+  initVideoControls();
 })();
 

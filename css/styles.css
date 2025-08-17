@@ -298,14 +298,151 @@ body {
   box-shadow: 0 20px 40px rgba(255, 134, 178, 0.15);
 }
 
+#pet-stage-video,
 #pet-stage-image {
-  width: min(60vw, 480px);
+  width: 100%;
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 18px 40px rgba(255, 134, 178, 0.35));
 }
 
+/* 视频特定样式 */
+#pet-stage-video {
+  background: transparent;
+  /* 确保视频在容器中正确显示 */
+  object-fit: contain;
+  /* 平滑过渡效果 */
+  transition: all 0.3s ease;
+  /* 混合模式，帮助处理透明背景 */
+  mix-blend-mode: multiply;
+  /* 或者使用其他混合模式 */
+  /* mix-blend-mode: screen; */
+  /* mix-blend-mode: overlay; */
+}
+
+/* 视频加载时的样式 */
+#pet-stage-video:not([src]) {
+  display: none;
+}
+
+/* 视频播放控制 */
+#pet-stage-video::-webkit-media-controls {
+  display: none;
+}
+
+#pet-stage-video::-webkit-media-controls-panel {
+  display: none;
+}
+
+#pet-stage-video::-webkit-media-controls-play-button {
+  display: none;
+}
+
+#pet-stage-video::-webkit-media-controls-start-playback-button {
+  display: none;
+}
+
+/* 宠物媒体容器 */
+.pet-media-container {
+  position: relative;
+  width: min(60vw, 480px);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 视频控制按钮 */
+.video-control-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 134, 178, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.video-control-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 134, 178, 0.6);
+  transform: scale(1.1);
+}
+
+.video-control-btn:active {
+  transform: scale(0.95);
+}
+
+.video-control-btn .pause-icon {
+  display: none;
+}
+
+.video-control-btn.paused .play-icon {
+  display: none;
+}
+
+.video-control-btn.paused .pause-icon {
+  display: block;
+}
+
+/* 视频背景处理按钮 */
+.video-bg-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 134, 178, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.video-bg-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 134, 178, 0.6);
+  transform: scale(1.1);
+}
+
+.video-bg-btn:active {
+  transform: scale(0.95);
+}
+
+/* 不同的混合模式样式 */
+.video-bg-multiply {
+  mix-blend-mode: multiply;
+}
+
+.video-bg-screen {
+  mix-blend-mode: screen;
+}
+
+.video-bg-overlay {
+  mix-blend-mode: overlay;
+}
+
+.video-bg-normal {
+  mix-blend-mode: normal;
+}
+
 /* 咀嚼动画 */
+#pet-stage-video.anim-chew,
 #pet-stage-image.anim-chew {
   animation: chew 0.7s ease-in-out 1;
 }
@@ -336,6 +473,7 @@ body {
 }
 
 /* 玩耍：左右轻摇 */
+#pet-stage-video.anim-wiggle,
 #pet-stage-image.anim-wiggle { animation: wiggle 0.6s ease-in-out 1; }
 @keyframes wiggle {
   0% { transform: rotate(0deg); }
@@ -359,6 +497,7 @@ body {
 }
 
 /* 睡觉：轻微下沉呼吸 */
+#pet-stage-video.anim-snooze,
 #pet-stage-image.anim-snooze { animation: snooze 1.2s ease-in-out 1; }
 @keyframes snooze {
   0% { transform: translateY(0); }
@@ -380,6 +519,7 @@ body {
 }
 
 /* 清洁：轻微晃动 + 泡泡 */
+#pet-stage-video.anim-shake,
 #pet-stage-image.anim-shake { animation: shake 0.5s ease-in-out 1; }
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -405,11 +545,12 @@ body {
 .pet-status-panel {
   background: linear-gradient(135deg, #fff, #fff8fc);
   border-radius: 24px;
-  padding: 24px;
+  padding: 20px;
   border: 2px dashed rgba(255, 134, 178, 0.3);
   box-shadow: 0 16px 32px rgba(255, 134, 178, 0.12);
   position: relative;
   overflow: hidden;
+  height: fit-content;
 }
 
 /* 顶部彩色条 */
@@ -432,8 +573,8 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 120px;
-  opacity: 0.03;
+  font-size: 80px;
+  opacity: 0.02;
   white-space: nowrap;
   pointer-events: none;
   z-index: 0;
@@ -459,6 +600,7 @@ body {
   bottom: 0;
   pointer-events: none;
   z-index: 1;
+  height: 100%;
 }
 
 .floating-hearts .heart {
@@ -522,24 +664,30 @@ body {
 /* 状态容器 */
 .stats-container {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  flex-direction: row;
+  gap: 10px;
+  margin-bottom: 16px;
   position: relative;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 /* 状态项目 */
 .stat-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 6px;
+  padding: 10px 6px;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 16px;
   border: 2px solid rgba(255, 134, 178, 0.15);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  min-width: 80px;
+  flex-shrink: 0;
+  height: fit-content;
 }
 
 .stat-item::before {
@@ -564,9 +712,9 @@ body {
 }
 
 .stat-icon {
-  font-size: 20px;
-  width: 40px;
-  height: 40px;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-content: center;
   background: linear-gradient(135deg, #ffe3f0, #f0f9ff);
@@ -589,24 +737,32 @@ body {
 .stat-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: fit-content;
 }
 
 .stat-label {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 6px;
-  font-size: 13px;
+  gap: 2px;
+  margin-bottom: 3px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text);
+  text-align: center;
+  height: fit-content;
 }
 
 .stat-text {
   color: var(--primary-strong);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   background: rgba(255, 134, 178, 0.1);
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 8px;
   transition: all 0.3s ease;
 }
@@ -619,11 +775,13 @@ body {
 /* 进度条样式 */
 .progress {
   width: 100%;
-  height: 8px;
+  height: 6px;
+  min-height: 6px;
   border-radius: 999px;
   background: rgba(255, 134, 178, 0.1);
   overflow: hidden;
   position: relative;
+  margin: 0;
 }
 
 .progress::after {
@@ -1021,6 +1179,41 @@ body {
   }
 
   .play-panel { margin-top: 12px; }
+  
+  /* 移动端状态条样式调整 */
+  .stats-container {
+    gap: 6px;
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+  }
+  
+  .stat-item {
+    min-width: 70px;
+    padding: 8px 4px;
+    gap: 4px;
+  }
+  
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+    gap: 1px;
+    margin-bottom: 3px;
+  }
+  
+  .stat-text {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+  
+  .progress {
+    height: 5px;
+    min-height: 5px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1068,6 +1261,41 @@ body {
   .mobile-menu-btn .menu-text {
     font-size: 13px;
   }
+  
+     /* 超小屏幕状态条样式调整 */
+   .stats-container {
+     gap: 4px;
+     padding-bottom: 2px;
+     margin-bottom: 12px;
+   }
+   
+   .stat-item {
+     min-width: 60px;
+     padding: 6px 3px;
+     gap: 3px;
+   }
+   
+   .stat-icon {
+     width: 28px;
+     height: 28px;
+     font-size: 14px;
+   }
+   
+   .stat-label {
+     font-size: 10px;
+     gap: 1px;
+     margin-bottom: 2px;
+   }
+   
+   .stat-text {
+     font-size: 9px;
+     padding: 1px 3px;
+   }
+   
+   .progress {
+     height: 4px;
+     min-height: 4px;
+   }
 }
 
 /* 移动端菜单按钮 */
