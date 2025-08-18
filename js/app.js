@@ -3,7 +3,7 @@
 
   // ---------- Utilities ----------
   // 临时禁用升级/成长
-  const LEVELING_DISABLED = true;
+  // const LEVELING_DISABLED = true; // 移除
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const nowMs = () => Date.now();
   const minutesBetween = (a, b) => Math.floor((a - b) / 60000);
@@ -34,145 +34,118 @@
     }
   };
 
-  function loadPetMedia(species, level) {
-    const safeLevel = LEVELING_DISABLED ? 1 : Math.max(1, Math.min(3, Number(level) || 1));
-    const key = speciesKey(species);
-    const base = `assets/${key}-${safeLevel}`;
-    
-    // 获取视频和图片元素
+  function loadPetMedia(pet) {
+    const key = pet.id;
+    const base = `assets/${key}`;
     const videoEl = document.getElementById('pet-stage-video');
-    const videoSource = document.getElementById('pet-video-source');
     const imgEl = document.getElementById('pet-stage-image');
-    
-    if (!videoEl || !videoSource || !imgEl) return;
-    
-    // 设置alt属性
-    const altText = `${species} - ${levelToStage(level)}`;
+    if (!videoEl || !imgEl) return;
+    const altText = `${pet.species}`;
     videoEl.alt = altText;
     imgEl.alt = altText;
     
-    // 重置显示状态
+    // 初始不加载图片，避免无意义的 404；仅在失败/超时时回退到图片
     videoEl.style.display = 'none';
-    imgEl.style.display = 'block';
+    imgEl.style.display = 'none';
     
-    // 尝试加载视频（优先WebM，回退到MP4）
+    const setVideoSources = (baseUrl, preferMp4First) => {
+      while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
     const webmSource = document.createElement('source');
-    webmSource.src = `${base}.webm`;
+      webmSource.src = `${baseUrl}.webm`;
     webmSource.type = 'video/webm';
-    
     const mp4Source = document.createElement('source');
-    mp4Source.src = `${base}.mp4`;
+      mp4Source.src = `${baseUrl}.mp4`;
     mp4Source.type = 'video/mp4';
+      if (preferMp4First) { videoEl.appendChild(mp4Source); videoEl.appendChild(webmSource); }
+      else { videoEl.appendChild(webmSource); videoEl.appendChild(mp4Source); }
+    };
     
-    // 清空现有source元素
-    videoEl.innerHTML = '';
-    videoEl.appendChild(webmSource);
-    videoEl.appendChild(mp4Source);
-    videoEl.appendChild(imgEl); // 添加回退图片
-    
+    const setSingleSource = (baseUrl, ext, mime) => {
+    while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
+      const s = document.createElement('source');
+      s.src = `${baseUrl}.${ext}`;
+      s.type = mime;
+      videoEl.appendChild(s);
+    };
+
+    // 按浏览器支持度选择顺序：优先 mp4，再 webm
+    const canMp4 = typeof videoEl.canPlayType === 'function' && videoEl.canPlayType('video/mp4');
+    const canWebm = typeof videoEl.canPlayType === 'function' && videoEl.canPlayType('video/webm');
+    const preferMp4First = (canMp4 === 'probably' || canMp4 === 'maybe') && !(canWebm === 'probably');
+
+    // 若两者都不支持，直接回退图片
+    if (!canMp4 && !canWebm) {
+      imgEl.style.display = 'block';
+      loadPetImage(imgEl, key);
+      return;
+    }
+
+    setVideoSources(base, preferMp4First);
+    try { videoEl.muted = true; videoEl.playsInline = true; } catch (_) {}
     videoEl.load();
     
-    // 设置超时处理
-    const videoTimeout = setTimeout(() => {
-      console.log('视频加载超时，回退到图片');
+    let attemptedAlternate = false;
+
+    const toImageFallback = () => {
       videoEl.style.display = 'none';
       imgEl.style.display = 'block';
-      
-      // 隐藏视频控制按钮
-      const videoControlBtn = document.getElementById('video-control-btn');
-      if (videoControlBtn) {
-        videoControlBtn.style.display = 'none';
-      }
-      
-      // 隐藏背景处理按钮
-      const videoBgBtn = document.getElementById('video-bg-btn');
-      if (videoBgBtn) {
-        videoBgBtn.style.display = 'none';
-      }
-      
-      loadPetImage(imgEl, species, level);
-    }, 3000); // 3秒超时
-    
-    // 视频加载错误时回退到图片
+      loadPetImage(imgEl, key);
+    };
+
+    const videoTimeout = setTimeout(() => { toImageFallback(); }, 8000);
+
     videoEl.onerror = () => {
       clearTimeout(videoTimeout);
-      console.log('视频加载失败，回退到图片');
-      videoEl.style.display = 'none';
-      imgEl.style.display = 'block';
-      
-      // 隐藏视频控制按钮
-      const videoControlBtn = document.getElementById('video-control-btn');
-      if (videoControlBtn) {
-        videoControlBtn.style.display = 'none';
+      // 尝试备用格式一次（只用 webm 或只用 mp4），避免首选不存在时直接失败
+      if (!attemptedAlternate) {
+        attemptedAlternate = true;
+        if (preferMp4First && (canWebm === 'probably' || canWebm === 'maybe')) {
+          setSingleSource(base, 'webm', 'video/webm');
+          videoEl.load();
+          return;
+        }
+        if (!preferMp4First && (canMp4 === 'probably' || canMp4 === 'maybe')) {
+          setSingleSource(base, 'mp4', 'video/mp4');
+          videoEl.load();
+          return;
+        }
       }
-      
-      // 隐藏背景处理按钮
-      const videoBgBtn = document.getElementById('video-bg-btn');
-      if (videoBgBtn) {
-        videoBgBtn.style.display = 'none';
-      }
-      
-      loadPetImage(imgEl, species, level);
+      toImageFallback();
     };
-    
-    // 视频加载成功时隐藏图片
+
     videoEl.onloadeddata = () => {
       clearTimeout(videoTimeout);
-      console.log('视频加载成功');
       videoEl.style.display = 'block';
       imgEl.style.display = 'none';
-      
-      // 显示视频控制按钮
-      const videoControlBtn = document.getElementById('video-control-btn');
-      if (videoControlBtn) {
-        videoControlBtn.style.display = 'flex';
-      }
-      
-      // 显示背景处理按钮
-      const videoBgBtn = document.getElementById('video-bg-btn');
-      if (videoBgBtn) {
-        videoBgBtn.style.display = 'flex';
-      }
-      
-      // 重新初始化视频控制（因为按钮现在才显示）
-      setTimeout(() => {
-        initVideoControls();
-      }, 100);
-      
-      // 尝试播放视频
-      videoEl.play().catch(e => {
-        console.log('视频自动播放失败:', e);
-        // 播放失败时仍然显示视频，用户可以手动播放
-      });
-      
-      // 检测视频格式并应用相应的背景处理
-      const videoSrc = videoEl.currentSrc || videoEl.src;
-      if (videoSrc && videoSrc.includes('.webm')) {
-        // WebM格式支持透明通道，使用正常显示
-        videoEl.style.mixBlendMode = 'normal';
+      setTimeout(() => { initMediaBgControls(); }, 100);
+      const playVideo = async () => {
+        try { await videoEl.play(); }
+        catch (e) {
+          if (e.name === 'NotAllowedError') {
+            const playOnClick = () => { videoEl.play().catch(() => {}); document.removeEventListener('click', playOnClick); };
+            document.addEventListener('click', playOnClick, { once: true });
+          }
+        }
+      };
+      playVideo();
+      const videoSrc = videoEl.currentSrc || (videoEl.querySelector('source')?.src) || videoEl.src;
+      if (videoSrc && /\.webm(\?|$)/i.test(videoSrc)) { videoEl.classList.add('video-bg-normal'); }
+      else { videoEl.classList.add('video-bg-multiply'); }
         videoEl.style.backgroundColor = 'transparent';
-      } else {
-        // MP4格式，尝试使用混合模式改善显示
-        videoEl.style.mixBlendMode = 'multiply';
-        videoEl.style.backgroundColor = 'transparent';
-      }
     };
     
-    // 视频播放结束时的处理
     videoEl.onended = () => {
-      // 视频播放结束后重新开始播放（循环）
       videoEl.currentTime = 0;
-      videoEl.play().catch(e => console.log('视频重新播放失败:', e));
+      videoEl.play().catch(() => { setTimeout(() => { videoEl.play().catch(() => {}); }, 100); });
     };
+
+    setTimeout(() => { initMediaBgControls(); }, 100);
   }
 
-  function loadPetImage(imgEl, species, level) {
+  function loadPetImage(imgEl, key) {
     if (!imgEl) return;
-    const safeLevel = LEVELING_DISABLED ? 1 : Math.max(1, Math.min(3, Number(level) || 1));
-    const key = speciesKey(species);
-    const base = `assets/${key}-${safeLevel}`;
-    imgEl.alt = `${species} - ${levelToStage(level)}`;
-    // 尝试 PNG → JPG → SVG 回退
+    const base = `assets/${key}`;
+    imgEl.alt = key;
     imgEl.onerror = null;
     imgEl.src = `${base}.png`;
     imgEl.onerror = () => {
@@ -180,46 +153,22 @@
       imgEl.src = `${base}.jpg`;
       imgEl.onerror = () => {
         imgEl.onerror = null;
-        imgEl.src = generatePetSvg(species, safeLevel);
+        imgEl.src = generatePetSvg(key);
       };
     };
   }
 
   // 生成宠物 SVG Data URL（根据物种与等级出不同配色与装饰）
-  function generatePetSvg(species, level) {
-    const safeLevel = LEVELING_DISABLED ? 1 : Math.max(1, Math.min(3, Number(level) || 1));
+  function generatePetSvg(key) {
     // 物种配色
     const palette = {
-      '猫': ['#f472b6', '#60a5fa'],     // 粉 + 蓝
-      '狗': ['#f59e0b', '#f97316'],     // 黄 + 橙
-      '龙': ['#10b981', '#22d3ee'],     // 绿 + 青
+      'cat': ['#f472b6', '#60a5fa'],
+      'dog': ['#f59e0b', '#f97316'],
+      'dragon': ['#10b981', '#22d3ee'],
+      'pet': ['#60a5fa', '#34d399'],
       '默认': ['#60a5fa', '#34d399']
     };
-    const [c1, c2] = (palette[species] || palette['默认']);
-    // 依据等级改变面部表情/装饰
-    const mouthPath = safeLevel === 1
-      ? 'M40 78C48 82 80 82 88 78'
-      : safeLevel === 2
-      ? 'M40 78C48 90 80 90 88 78'
-      : 'M42 82C56 70 72 70 86 82';
-    const blush = safeLevel >= 2
-      ? '<circle cx="44" cy="68" r="3" fill="#fda4af"/><circle cx="84" cy="68" r="3" fill="#fda4af"/>'
-      : '';
-    const ear = species === '猫'
-      ? '<path d="M32 46L44 30L50 52" fill="#fff" fill-opacity="0.18"/><path d="M96 46L84 30L78 52" fill="#fff" fill-opacity="0.18"/>'
-      : species === '狗'
-      ? '<path d="M30 48C30 34 46 28 50 38C46 48 38 54 30 48Z" fill="#000" fill-opacity="0.12"/><path d="M98 48C98 34 82 28 78 38C82 48 90 54 98 48Z" fill="#000" fill-opacity="0.12"/>'
-      : species === '龙'
-      ? '<path d="M32 40L46 36L40 52Z" fill="#0ea5e9" fill-opacity="0.35"/><path d="M96 40L82 36L88 52Z" fill="#0ea5e9" fill-opacity="0.35"/>'
-      : '';
-    const badgeText = safeLevel === 1 ? '幼年' : safeLevel === 2 ? '成长' : '成年';
-    const badge = `<rect x="78" y="18" rx="8" ry="8" width="40" height="24" fill="#0b1020" fill-opacity="0.55"/>
-<text x="98" y="35" font-size="12" text-anchor="middle" fill="#e2e8f0" font-family="Inter,Arial">${badgeText}</text>`;
-    const deco = safeLevel === 2
-      ? '<path d="M64 14l3 6 6 1-6 2-3 6-3-6-6-2 6-1 3-6Z" fill="#fcd34d" fill-opacity="0.8"/>'
-      : safeLevel === 3
-      ? '<path d="M52 16L64 10L76 16L74 28H54L52 16Z" fill="#f59e0b" fill-opacity="0.9"/>'
-      : '';
+    const [c1, c2] = (palette[key] || palette['默认']);
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -232,14 +181,10 @@
     </filter>
   </defs>
   <g filter="url(#shadow)">
-    ${deco}
     <circle cx="64" cy="64" r="44" fill="url(#g)"/>
-    ${ear}
     <circle cx="48" cy="56" r="6" fill="#0b1020"/>
     <circle cx="80" cy="56" r="6" fill="#0b1020"/>
-    <path d="${mouthPath}" stroke="#0b1020" stroke-width="6" stroke-linecap="round"/>
-    ${blush}
-    ${badge}
+    <path d="M40 78C48 82 80 82 88 78" stroke="#0b1020" stroke-width="6" stroke-linecap="round"/>
   </g>
 </svg>`;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
@@ -249,11 +194,12 @@
   const STORAGE_KEY = 'oc-pet-system/v1';
   const DEFAULT_STATE = { pets: [], selectedPetId: null };
 
-  // 三只固定宠物的初始定义
+  // 三只固定宠物的初始定义，id写死
   const FIXED_PETS = [
-    { name: '可可', species: '猫' },
-    { name: '旺财', species: '狗' },
-    { name: '小青', species: '龙' }
+    { id: 'pet-001', name: '可可', species: '猫' },
+    { id: 'pet-002', name: '旺财', species: '狗' },
+    { id: 'pet-003', name: '小青', species: '龙' },
+    { id: 'pet-004', name: '阿狸', species: '狐狸' }
   ];
 
   function loadState() {
@@ -273,31 +219,27 @@
   }
 
   // ---------- Domain ----------
-  function createPet({ name, species }) {
+  function createPet({ id, name, species }) {
     const timestamp = nowMs();
     return {
-      id: uid(),
+      id: id || uid(),
       name: name.trim(),
       species,
-      hunger: 30,       // 0 好，100 饿
-      happiness: 70,    // 0 差，100 好
-      energy: 70,       // 0 困，100 精力足
-      cleanliness: 80,  // 0 脏，100 干净
-      xp: 0,            // 0..100 每升1级清零
-      level: 1,
+      hunger: 30,
+      happiness: 70,
+      energy: 70,
+      cleanliness: 80,
+      stage: '',
       lastUpdated: timestamp
     };
   }
 
   function applyTimeDelta(pet, minutes) {
     if (minutes <= 0) return pet;
-    // 按分钟衰减/增长
-    const hungerDelta = +1.0 * minutes; // 越来越饿
+    const hungerDelta = +1.0 * minutes;
     const energyDelta = -0.5 * minutes;
     const cleanlinessDelta = -0.3 * minutes;
-    // 快乐根据饥饿程度变化
     const happinessDelta = (pet.hunger > 70 ? -0.5 : -0.2) * minutes;
-
     return {
       ...pet,
       hunger: clamp(pet.hunger + hungerDelta, 0, 100),
@@ -308,60 +250,34 @@
     };
   }
 
-  function gainXpAndMaybeLevelUp(pet, gained) {
-    // 升级功能暂时关闭：不增加经验、不改变等级
-    if (LEVELING_DISABLED) {
-      return pet;
-    }
-    // 限定 1..3 级；达到 3 级后经验固定满
-    if (pet.level >= 3) {
-      return { ...pet, level: 3, xp: 100 };
-    }
-    let xp = clamp(pet.xp + gained, 0, 1000);
-    let level = pet.level;
-    while (xp >= 100 && level < 3) {
-      xp -= 100;
-      level += 1;
-    }
-    if (level >= 3) {
-      level = 3;
-      xp = 100;
-    }
-    return { ...pet, xp, level };
-  }
-
   const ACTIONS = {
     feed(pet) {
-      const updated = {
+      return {
         ...pet,
         hunger: clamp(pet.hunger - 20, 0, 100),
         happiness: clamp(pet.happiness + 5, 0, 100)
       };
-      return gainXpAndMaybeLevelUp(updated, 5);
     },
     play(pet) {
-      const updated = {
+      return {
         ...pet,
         happiness: clamp(pet.happiness + 15, 0, 100),
         energy: clamp(pet.energy - 15, 0, 100),
         cleanliness: clamp(pet.cleanliness - 10, 0, 100)
       };
-      return gainXpAndMaybeLevelUp(updated, 10);
     },
     sleep(pet) {
-      const updated = {
+      return {
         ...pet,
         energy: clamp(pet.energy + 25, 0, 100),
         hunger: clamp(pet.hunger + 10, 0, 100)
       };
-      return gainXpAndMaybeLevelUp(updated, 5);
     },
     clean(pet) {
-      const updated = {
+      return {
         ...pet,
         cleanliness: clamp(pet.cleanliness + 40, 0, 100)
       };
-      return gainXpAndMaybeLevelUp(updated, 3);
     }
   };
 
@@ -403,24 +319,41 @@
   let state = loadState();
   let petListExpanded = false; // 新增：宠物列表展开状态
 
-  // 保证固定三只宠物存在（首次自动生成；导入后也调用同逻辑）
+  // 保证四只固定宠物存在（ID固定，名称/种族/时期可编辑不影响ID和外观）
   function ensureFixedPets(stateIn) {
-    const existing = stateIn.pets || [];
-    // 若已有存档，原样保留，仅校正选中项
-    if (existing.length > 0) {
-      let selectedPetId = stateIn.selectedPetId;
-      if (!existing.find((p) => p.id === selectedPetId)) selectedPetId = existing[0]?.id || null;
-      return { pets: existing, selectedPetId };
-    }
-    // 无存档时，提供三只默认宠物作为初始数据
-    const pets = FIXED_PETS.map((fp) => createPet(fp));
-    const selectedPetId = pets[0]?.id || null;
+    const existingById = new Map((stateIn.pets || []).map((p) => [p.id, p]));
+    const pets = FIXED_PETS.map((tpl) => {
+      const src = existingById.get(tpl.id) || {};
+      return {
+        id: tpl.id,
+        name: typeof src.name === 'string' ? src.name : tpl.name,
+        species: typeof src.species === 'string' ? src.species : tpl.species,
+        hunger: clamp(typeof src.hunger === 'number' ? src.hunger : 30, 0, 100),
+        happiness: clamp(typeof src.happiness === 'number' ? src.happiness : 70, 0, 100),
+        energy: clamp(typeof src.energy === 'number' ? src.energy : 70, 0, 100),
+        cleanliness: clamp(typeof src.cleanliness === 'number' ? src.cleanliness : 80, 0, 100),
+        stage: typeof src.stage === 'string' ? src.stage : '',
+        lastUpdated: typeof src.lastUpdated === 'number' ? src.lastUpdated : nowMs(),
+      };
+    });
+    const selectedPetId = FIXED_PETS.some((p) => p.id === stateIn.selectedPetId) ? stateIn.selectedPetId : pets[0].id;
     return { pets, selectedPetId };
   }
 
-  // 固定三只并追帧
+  // 固定四只并追帧
   state = ensureFixedPets(state);
   state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
+  saveState(state);
+
+  // 自动修复历史数据：加载时为每只宠物补 id
+  state.pets = state.pets.map((pet, idx) => {
+    if (!pet.id) {
+      pet.id = uid();
+      // 控制台提示
+      console.warn('宠物缺少id，已自动生成。请将原有资源文件重命名为：', pet.id);
+    }
+    return pet;
+  });
   saveState(state);
 
   // ---------- Rendering ----------
@@ -448,31 +381,6 @@
     
     // 清空现有内容
     listEl.innerHTML = '';
-
-    // 创建外层下拉容器（相对定位）
-    const dropdownLi = document.createElement('li');
-    dropdownLi.className = 'pet-dropdown';
-
-    // 创建品牌标题（可点击展开）
-    const brandLi = document.createElement('li');
-    brandLi.className = 'brand-toggle';
-    brandLi.setAttribute('role', 'button');
-    brandLi.setAttribute('aria-expanded', String(petListExpanded));
-    brandLi.innerHTML = `
-      <div class="brand">
-        <div class="brand-logo">🐾</div>
-        <div class="brand-name">OC 宠物系统</div>
-      </div>
-      <span class="toggle-icon">${petListExpanded ? '▼' : '▶'}</span>
-    `;
-    brandLi.addEventListener('click', () => {
-      petListExpanded = !petListExpanded;
-      renderPetList();
-    });
-
-    // 创建浮动宠物列表容器（绝对定位到品牌项下方）
-    const floatingContainer = document.createElement('div');
-    floatingContainer.className = `floating-pet-list ${petListExpanded ? 'expanded' : 'collapsed'}`;
     
     // 创建宠物列表
     const petListUl = document.createElement('ul');
@@ -482,7 +390,7 @@
     state.pets.forEach((pet) => {
       const li = document.createElement('li');
       li.className = 'pet-item' + (pet.id === state.selectedPetId ? ' active' : '');
-      li.title = `${pet.name}（${pet.species}） Lv.${LEVELING_DISABLED ? 1 : pet.level}`;
+      li.title = `${pet.name}（${pet.species}）`;
 
       const emoji = document.createElement('div');
       emoji.className = 'pet-emoji';
@@ -495,12 +403,7 @@
       name.className = 'pet-item-name';
       name.textContent = pet.name;
 
-      const meta = document.createElement('span');
-      meta.className = 'pill';
-      meta.textContent = `Lv.${LEVELING_DISABLED ? 1 : pet.level}`;
-
       main.appendChild(name);
-      main.appendChild(meta);
 
       li.appendChild(emoji);
       li.appendChild(main);
@@ -514,14 +417,8 @@
       petListUl.appendChild(li);
     });
 
-    floatingContainer.appendChild(petListUl);
-
-    // 组装：品牌 + 浮动列表 放入同一个 li
-    dropdownLi.appendChild(brandLi);
-    dropdownLi.appendChild(floatingContainer);
-
-    // 放入主列表
-    listEl.appendChild(dropdownLi);
+    // 直接放入主列表（移除顶部展开功能）
+    listEl.appendChild(petListUl);
   }
 
   function formatTime(ts) {
@@ -537,34 +434,30 @@
   function renderPetDetail(pet) {
     nameEl.textContent = pet.name;
     speciesEl.textContent = pet.species;
-    levelEl.textContent = levelToStage(LEVELING_DISABLED ? 1 : pet.level);
-    loadPetMedia(pet.species, pet.level);
+    levelEl.textContent = pet.stage && pet.stage.trim() ? pet.stage : '';
+    loadPetMedia(pet);
 
-    const hungerPercent = pet.hunger;            // 越小越好
+    const hungerPercent = pet.hunger;
     const happinessPercent = pet.happiness;
     const energyPercent = pet.energy;
     const cleanlinessPercent = pet.cleanliness;
-    const xpPercent = (pet.xp / 100) * 100;
 
     // 更新进度条宽度
     hungerBar.style.width = `${hungerPercent}%`;
     happinessBar.style.width = `${happinessPercent}%`;
     energyBar.style.width = `${energyPercent}%`;
     cleanlinessBar.style.width = `${cleanlinessPercent}%`;
-    xpBar.style.width = `${xpPercent}%`;
 
     // 添加低值警告效果
     hungerBar.classList.toggle('low', hungerPercent < 30);
     happinessBar.classList.toggle('low', happinessPercent < 30);
     energyBar.classList.toggle('low', energyPercent < 30);
     cleanlinessBar.classList.toggle('low', cleanlinessPercent < 30);
-    xpBar.classList.toggle('low', xpPercent < 30);
 
     hungerText.textContent = `${Math.round(pet.hunger)}`;
     happinessText.textContent = `${Math.round(pet.happiness)}`;
     energyText.textContent = `${Math.round(pet.energy)}`;
     cleanlinessText.textContent = `${Math.round(pet.cleanliness)}`;
-    xpText.textContent = `${Math.round(pet.xp)}/100`;
 
     lastUpdatedEl.textContent = `上次更新：${formatTime(pet.lastUpdated)}`;
   }
@@ -659,7 +552,7 @@
         happiness: clamp(pet.happiness + bonus, 0, 100),
         energy: clamp(pet.energy - 5, 0, 100),
       };
-      return gainXpAndMaybeLevelUp(updated, Math.ceil(bonus / 2));
+      return updated;
     });
   }
 
@@ -735,11 +628,44 @@
   renameBtn.addEventListener('click', () => {
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     if (!pet) return;
-    const name = prompt('请输入新的名字：', pet.name);
-    if (!name) return;
-    pet.name = name.trim().slice(0, 20) || pet.name;
+    const dlg = document.getElementById('rename-dialog');
+    const nameInput = document.getElementById('rename-name');
+    const speciesInput = document.getElementById('rename-species');
+    const stageInput = document.getElementById('rename-stage');
+    const saveBtn = document.getElementById('rename-save');
+    const cancelBtn = document.getElementById('rename-cancel');
+    if (!dlg || !nameInput || !speciesInput || !stageInput || !saveBtn || !cancelBtn) return;
+
+    // 预填
+    nameInput.value = pet.name || '';
+    speciesInput.value = pet.species || '猫';
+    stageInput.value = pet.stage || '';
+
+    // 打开
+    try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', 'true'); }
+
+    const onCancel = () => {
+      dlg.close && dlg.close();
+      dlg.removeAttribute('open');
+      saveBtn.removeEventListener('click', onSave);
+      cancelBtn.removeEventListener('click', onCancel);
+    };
+
+    const onSave = () => {
+      const newName = nameInput.value.trim().slice(0, 20);
+      const newSpecies = speciesInput.value.trim().slice(0, 10);
+      const newStage = stageInput.value.trim().slice(0, 10);
+      if (newName) pet.name = newName;
+      if (newSpecies) pet.species = newSpecies;
+      pet.stage = newStage; // 保存自定义时期
+      pet.lastUpdated = nowMs();
     saveState(state);
     render();
+      onCancel();
+    };
+
+    saveBtn.addEventListener('click', onSave);
+    cancelBtn.addEventListener('click', onCancel);
   });
 
   // 禁止释放
@@ -791,6 +717,15 @@
     panel.removeAttribute('style');
   });
 
+  // 通用：玩耍面板右上角悬浮关闭按钮
+  document.getElementById('play-panel-close')?.addEventListener('click', () => {
+    const panel = document.getElementById('play-panel');
+    if (!panel) return;
+    panel.classList.add('hidden');
+    panel.classList.remove('as-overlay');
+    panel.removeAttribute('style');
+  });
+
   // 猜谜语
   const RIDDLES = [
     { q: '什么东西有很多牙齿，却从不咬人？', a: '梳子', h: '每天用来打理头发' },
@@ -834,9 +769,9 @@
     { q: '什么东西越大越不值钱？', a: '洞', h: '越大越漏' },
     { q: '背着房子到处走的是什么？', a: '蜗牛', h: '慢吞吞' },
     { q: '总在你前面却永远追不上的是？', a: '明天', h: '时间观念' },
-    { q: '什么字写错了也没人会说错？', a: '“错”字', h: '字面意思' },
+    { q: '什么字写错了也没人会说错？', a: '"错"字', h: '字面意思' },
     { q: '什么东西生在水里，死在锅里，埋在肚里？', a: '鱼', h: '美食' },
-    { q: '什么植物一出生就带“胡子”？', a: '玉米', h: '玉米须' },
+    { q: '什么植物一出生就带"胡子"？', a: '玉米', h: '玉米须' },
     { q: '什么东西越拉越长，越剪越短？', a: '头发', h: '理发店' },
     { q: '什么东西有眼却看不见？', a: '台风', h: '天气新闻' },
     { q: '什么东西没有生命却会哭？', a: '天空', h: '下雨' },
@@ -886,11 +821,11 @@
     '我本来想减肥的，后来想想，胖点更有福气。',
     '程序员的键盘上，最常按的是F5，因为他们喜欢刷新自己。',
     '昨天去跑步了，结果跑丢了，坚持不下去了。',
-    '今天打算早睡，结果计划赶不上“刷短视频”的变化。',
+    '今天打算早睡，结果计划赶不上"刷短视频"的变化。',
     '我决定明天开始健身，前提是明天永远不要来。',
     '手机电量% 就像自律程度，看的挺多，用的挺少。',
     '闹钟叫醒不了装睡的人，但能叫醒全宿舍的人。',
-    '我不是不想起床，是被被子“软禁”了。',
+    '我不是不想起床，是被被子"软禁"了。',
     '出去跑步十分钟，我的灵魂先回来了。',
     '我和沙发是真爱，一坐就分不开。',
     '钱包：我瘦了，你开心了吗？',
@@ -898,19 +833,19 @@
     '减肥小妙招：先把体重秤藏起来。',
     '自拍与身份证照片的区别，就像梦想和现实。',
     '考试时最怕的不是不会，而是会的都没考。',
-    '我不是“社恐”，我只是“社懒”。',
+    '我不是"社恐"，我只是"社懒"。',
     '我不熬夜，夜熬我。',
-    '我最擅长的运动是“翻身继续睡”。',
+    '我最擅长的运动是"翻身继续睡"。',
     '人生就是起起落落落落……然后再起一点点。',
     '想吃零食的时候，先喝口水……然后继续吃。',
     '谁说鱼的记忆只有秒？我的密码输错三次就全忘了。',
-    '我练了很久的腹肌，最后练成了“一块腹肌”。',
+    '我练了很久的腹肌，最后练成了"一块腹肌"。',
     '早睡的人都有一个共同点：不是我。',
     '我给自己定了个目标：再拖延一天。',
     '追剧到一半卡住了，我的心也卡住了。',
-    '我不是单身，我是“恋爱未上线”。',
+    '我不是单身，我是"恋爱未上线"。',
     '段子看多了，生活也开始自带字幕了。',
-    '我最喜欢的运动是“躺平”，不费力还省心。',
+    '我最喜欢的运动是"躺平"，不费力还省心。',
     '别人减肥是为了变美，我减肥是为了省钱。',
     '朋友圈发了一条动态：今晚不熬夜。然后删除了。',
     '外卖小哥：你点的不是饭，是我的人生跑步纪录。',
@@ -924,12 +859,12 @@
     '烦恼像头发一样，每天都会长出来。',
     '周一综合症：一睁眼想请假。',
     '一想到明天要起床，我就觉得今天要早点睡……然后继续玩。',
-    '我的字典里没有“放弃”，因为我从来没开始。',
+    '我的字典里没有"放弃"，因为我从来没开始。',
     '所谓成熟，就是学会在买单时保持微笑。',
     '我最大的优点是乐观，最大的缺点是过于乐观。',
-    '如果人生是一场游戏，我肯定是选择了“休闲模式”。',
+    '如果人生是一场游戏，我肯定是选择了"休闲模式"。',
     '天气预报说今天有太阳，结果太阳说它加班。',
-    '小时候想当科学家，长大后只想当“有钱人”。',
+    '小时候想当科学家，长大后只想当"有钱人"。',
     '我决定从明天开始努力，今天先努力休息。',
     '如果努力有用，我早就……继续努力了。',
     '人生建议：遇事不决，先吃顿好的。',
@@ -963,7 +898,7 @@
     { s: '小孩每次考试都只拿第二名。为什么？', h: '与人有关', a: '父母名字分别叫一名和三名。' },
     { s: '她在婚礼前一晚剪坏了婚纱，却笑了。为什么？', h: '摆脱了某件事', a: '被迫婚约，借机取消婚礼。' },
     { s: '他每天都去海边捡瓶子。为什么？', h: '寻找线索', a: '在找遇难亲人的求救信息。' },
-    { s: '他收到了一个空盒子，却异常开心。为什么？', h: '象征意义', a: '空盒子代表“重启”，是朋友的鼓励。' },
+    { s: '他收到了一个空盒子，却异常开心。为什么？', h: '象征意义', a: '空盒子代表"重启"，是朋友的鼓励。' },
     { s: '她把戒指扔进湖里，第二天却戴上了。为什么？', h: '有人帮忙', a: '潜水员朋友帮她找回并劝和。' },
     { s: '他给自己寄了一封没有地址的信。为什么？', h: '测试', a: '测试邮局是否会退回，证明地址无效。' },
     { s: '他搬家后第一件事是敲门拜访邻居。为什么？', h: '确认安全', a: '确认火灾逃生通道和邻里支援。' },
@@ -1071,16 +1006,46 @@
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   const mobilePetOverlay = document.getElementById('mobile-pet-overlay');
   const closeMobilePetBtn = document.getElementById('close-mobile-pet');
+  const openPetListBtn = document.getElementById('open-pet-list-btn');
+  const petPickerDropdown = document.getElementById('pet-picker-dropdown');
 
-  // 移动端菜单按钮点击事件
-  mobileMenuBtn && mobileMenuBtn.addEventListener('click', () => {
-    mobilePetOverlay.style.display = 'block';
-    // 强制重排后添加active类
-    requestAnimationFrame(() => {
-      mobilePetOverlay.classList.add('active');
+  // 顶部按钮改为下拉选择器
+  function renderPetPicker() {
+    if (!petPickerDropdown) return;
+    petPickerDropdown.innerHTML = '';
+    state.pets.forEach((pet) => {
+      const item = document.createElement('div');
+      item.className = `pet-picker-item ${pet.id === state.selectedPetId ? 'active' : ''}`;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', pet.id === state.selectedPetId ? 'true' : 'false');
+      item.innerHTML = `
+        <span class="pet-emoji">${speciesToEmoji(pet.species)}</span>
+        <div class="pet-item-main">
+          <span class="pet-item-name">${pet.name}</span>
+        </div>
+      `;
+      item.addEventListener('click', () => {
+        state.selectedPetId = pet.id;
+        saveState(state);
+        render();
+        petPickerDropdown.classList.add('hidden');
+      });
+      petPickerDropdown.appendChild(item);
     });
-    // 同步移动端宠物列表
-    syncMobilePetList();
+  }
+
+  openPetListBtn && openPetListBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!petPickerDropdown) return;
+    renderPetPicker();
+    petPickerDropdown.classList.toggle('hidden');
+  });
+
+  // 点击页面空白处关闭
+  document.addEventListener('click', (e) => {
+    if (!petPickerDropdown || petPickerDropdown.classList.contains('hidden')) return;
+    const within = petPickerDropdown.contains(e.target) || (openPetListBtn && openPetListBtn.contains(e.target));
+    if (!within) petPickerDropdown.classList.add('hidden');
   });
 
   // 关闭移动端宠物列表
@@ -1142,7 +1107,6 @@
         <span class="pet-emoji">${speciesToEmoji(pet.species)}</span>
         <div class="pet-item-main">
           <span class="pet-item-name">${pet.name}</span>
-          <span class="pill">${pet.species}</span>
         </div>
       `;
       
@@ -1258,80 +1222,64 @@
   }, { passive: true });
 
   // ---------- Video Controls ----------
-  function initVideoControls() {
-    const videoControlBtn = document.getElementById('video-control-btn');
+  // 背景处理模式 - 移到全局作用域
+  const bgModes = [
+    'normal',
+    'multiply',
+    'screen',
+    'overlay',
+    'darken',
+    'lighten',
+    'color-dodge',
+    'color-burn',
+    'hard-light',
+    'soft-light',
+    'difference',
+    'exclusion',
+    'hue',
+    'saturation',
+    'color',
+    'luminosity',
+    'plus-lighter'
+  ];
+  let currentBgMode = 0;
+
+  function initMediaBgControls() {
     const videoBgBtn = document.getElementById('video-bg-btn');
     const petVideo = document.getElementById('pet-stage-video');
+    const petImg = document.getElementById('pet-stage-image');
+    if (!videoBgBtn) return;
 
-    console.log('初始化视频控制:', {
-      videoControlBtn: !!videoControlBtn,
-      videoBgBtn: !!videoBgBtn,
-      petVideo: !!petVideo
-    });
+    // 始终显示按钮（覆盖HTML里的 display:none）
+    videoBgBtn.style.display = 'block';
 
-    // 背景处理模式
-    const bgModes = ['normal', 'multiply', 'screen', 'overlay'];
-    let currentBgMode = 0;
-
-    if (videoControlBtn && petVideo) {
-      // 视频控制按钮点击事件
-      videoControlBtn.addEventListener('click', () => {
-        console.log('视频控制按钮被点击');
-        if (petVideo.paused) {
-          petVideo.play().then(() => {
-            videoControlBtn.classList.add('paused');
-          }).catch(e => {
-            console.log('视频播放失败:', e);
-          });
-        } else {
-          petVideo.pause();
-          videoControlBtn.classList.remove('paused');
-        }
-      });
-
-      // 监听视频播放状态变化
-      petVideo.addEventListener('play', () => {
-        videoControlBtn.classList.add('paused');
-      });
-
-      petVideo.addEventListener('pause', () => {
-        videoControlBtn.classList.remove('paused');
-      });
-
-      petVideo.addEventListener('ended', () => {
-        videoControlBtn.classList.remove('paused');
-      });
-    }
-
-    if (videoBgBtn && petVideo) {
-      // 背景处理按钮点击事件
-      videoBgBtn.addEventListener('click', () => {
-        console.log('背景处理按钮被点击');
-        // 移除所有背景模式类
-        petVideo.classList.remove('video-bg-normal', 'video-bg-multiply', 'video-bg-screen', 'video-bg-overlay');
-        
+    if (!videoBgBtn.hasAttribute('data-initialized')) {
+      videoBgBtn.setAttribute('data-initialized', 'true');
+      videoBgBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // 判断当前显示的是视频还是图片
+        const mediaEl = (petVideo && petVideo.style.display !== 'none') ? petVideo : petImg;
+        // 移除所有混合模式 class
+        bgModes.forEach(mode => {
+          mediaEl.classList.remove(`video-bg-${mode}`);
+        });
         // 切换到下一个模式
         currentBgMode = (currentBgMode + 1) % bgModes.length;
         const newMode = bgModes[currentBgMode];
-        
-        // 应用新的背景模式
-        petVideo.classList.add(`video-bg-${newMode}`);
-        
+        mediaEl.classList.add(`video-bg-${newMode}`);
         // 更新按钮提示
         const modeNames = {
-          'normal': '正常',
-          'multiply': '正片叠底',
-          'screen': '滤色',
-          'overlay': '叠加'
+          'normal': '正常', 'multiply': '正片叠底', 'screen': '滤色', 'overlay': '叠加',
+          'darken': '变暗', 'lighten': '变亮', 'color-dodge': '颜色减淡', 'color-burn': '颜色加深',
+          'hard-light': '强光', 'soft-light': '柔光', 'difference': '差值', 'exclusion': '排除',
+          'hue': '色相', 'saturation': '饱和度', 'color': '颜色', 'luminosity': '亮度', 'plus-lighter': '叠加亮化'
         };
         videoBgBtn.title = `背景处理: ${modeNames[newMode]}`;
-        
-        console.log(`切换到背景模式: ${newMode}`);
       });
     }
   }
 
-  // 初始化视频控制
-  initVideoControls();
+  // 初始化媒体背景控制（页面加载时）
+  initMediaBgControls();
 })();
 

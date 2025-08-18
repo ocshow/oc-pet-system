@@ -135,17 +135,71 @@ body {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .pet-overview {
   flex: 1;
+  width: 100%;
 }
 
 .pet-info-row {
   display: flex;
   align-items: center;
   gap: 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* 避免换行影响右侧对齐 */
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pet-info-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+/* 让重命名按钮贴右对齐 */
+.pet-info-row > #rename-btn {
+  margin-left: auto;
+}
+
+/* 萌系下拉宠物选择器 */
+.pet-picker { position: relative; }
+.pet-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 3000;
+  min-width: 200px;
+  margin-top: 6px;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 2px solid rgba(255, 134, 178, 0.3);
+  box-shadow: 0 12px 28px rgba(255, 134, 178, 0.18);
+  border-radius: 14px;
+  padding: 8px;
+}
+.pet-picker-dropdown.hidden { display: none; }
+.pet-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px dashed rgba(255, 134, 178, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pet-picker-item + .pet-picker-item { margin-top: 6px; }
+.pet-picker-item:hover {
+  border-color: rgba(255, 134, 178, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(255, 134, 178, 0.12);
+}
+.pet-picker-item.active {
+  border-color: var(--primary-strong);
+  background: #fff0f7;
 }
 
 .pet-name {
@@ -175,6 +229,12 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+}
+
+/* 保证重命名按钮所在容器不被其它元素挤压，贴右侧 */
+.pet-info-row > #rename-btn {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .btn-inline:hover {
@@ -238,32 +298,20 @@ body {
 /* 新的水平布局 */
 .pet-content {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 24px;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
   margin-top: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .pet-left {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr auto;
   gap: 12px;
 }
 
-.pet-left .actions-panel {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  left: auto;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  backdrop-filter: none;
-  border-radius: 0;
-  box-shadow: none;
-  z-index: 3;
-}
+/* 旧的悬浮工具条样式不再使用 */
+.pet-left .actions-panel { display: none; }
 
 /* 悬浮工具条：竖直一列，贴右侧 */
 .pet-left .actions-panel .actions {
@@ -286,17 +334,80 @@ body {
 .pet-stage {
   margin-top: 0;
   height: min(60vh, 480px);
+  width: 100%;
   border-radius: 24px;
   background:
+    linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57),
     radial-gradient(700px 420px at 50% -20%, rgba(255, 208, 228, 0.6), transparent),
     radial-gradient(600px 380px at 0% 100%, rgba(165, 216, 255, 0.45), transparent),
-    radial-gradient(600px 380px at 100% 100%, rgba(178, 242, 187, 0.5), transparent),
-    #fff;
+    radial-gradient(600px 380px at 100% 100%, rgba(178, 242, 187, 0.5), transparent);
+  background-blend-mode: overlay;
   border: 3px dashed rgba(255, 134, 178, 0.45);
   position: relative;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(255, 134, 178, 0.15);
 }
+
+/* 新增：宠物容器下方的横向操作栏 */
+.actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(255, 134, 178, 0.12);
+}
+
+.actions-bar .actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between; /* 均匀分布 */
+  gap: 8px;
+  width: 100%;
+  padding: 0 12px; /* 左右留出间距：喂食左侧 & 背景右侧 */
+}
+
+/* 让图标在上、文字在下（可爱萌系） */
+.actions-bar .action-btn {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.actions-bar .action-emoji {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(255, 134, 178, 0.3));
+}
+
+.actions-bar .action-text {
+  display: block;
+  position: static;
+  padding: 0;
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.actions-bar .action-btn:hover .action-emoji { transform: scale(1.15); }
 
 #pet-stage-video,
 #pet-stage-image {
@@ -313,11 +424,6 @@ body {
   object-fit: contain;
   /* 平滑过渡效果 */
   transition: all 0.3s ease;
-  /* 混合模式，帮助处理透明背景 */
-  mix-blend-mode: multiply;
-  /* 或者使用其他混合模式 */
-  /* mix-blend-mode: screen; */
-  /* mix-blend-mode: overlay; */
 }
 
 /* 视频加载时的样式 */
@@ -345,100 +451,86 @@ body {
 /* 宠物媒体容器 */
 .pet-media-container {
   position: relative;
-  width: min(60vw, 480px);
+  width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 视频控制按钮 */
-.video-control-btn {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(255, 134, 178, 0.3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-}
-
-.video-control-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: rgba(255, 134, 178, 0.6);
-  transform: scale(1.1);
-}
-
-.video-control-btn:active {
-  transform: scale(0.95);
-}
-
-.video-control-btn .pause-icon {
-  display: none;
-}
-
-.video-control-btn.paused .play-icon {
-  display: none;
-}
-
-.video-control-btn.paused .pause-icon {
-  display: block;
-}
-
-/* 视频背景处理按钮 */
-.video-bg-btn {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(255, 134, 178, 0.3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-}
-
-.video-bg-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: rgba(255, 134, 178, 0.6);
-  transform: scale(1.1);
-}
-
-.video-bg-btn:active {
-  transform: scale(0.95);
+/* 视频背景处理按钮样式 */
+#video-bg-btn {
+  /* 继承action-btn的样式 */
 }
 
 /* 不同的混合模式样式 */
-.video-bg-multiply {
+#pet-stage-video.video-bg-multiply,
+#pet-stage-image.video-bg-multiply {
   mix-blend-mode: multiply;
 }
-
-.video-bg-screen {
+#pet-stage-video.video-bg-screen,
+#pet-stage-image.video-bg-screen {
   mix-blend-mode: screen;
 }
-
-.video-bg-overlay {
+#pet-stage-video.video-bg-overlay,
+#pet-stage-image.video-bg-overlay {
   mix-blend-mode: overlay;
 }
-
-.video-bg-normal {
+#pet-stage-video.video-bg-normal,
+#pet-stage-image.video-bg-normal {
   mix-blend-mode: normal;
+}
+#pet-stage-video.video-bg-darken,
+#pet-stage-image.video-bg-darken {
+  mix-blend-mode: darken;
+}
+#pet-stage-video.video-bg-lighten,
+#pet-stage-image.video-bg-lighten {
+  mix-blend-mode: lighten;
+}
+#pet-stage-video.video-bg-color-dodge,
+#pet-stage-image.video-bg-color-dodge {
+  mix-blend-mode: color-dodge;
+}
+#pet-stage-video.video-bg-color-burn,
+#pet-stage-image.video-bg-color-burn {
+  mix-blend-mode: color-burn;
+}
+#pet-stage-video.video-bg-hard-light,
+#pet-stage-image.video-bg-hard-light {
+  mix-blend-mode: hard-light;
+}
+#pet-stage-video.video-bg-soft-light,
+#pet-stage-image.video-bg-soft-light {
+  mix-blend-mode: soft-light;
+}
+#pet-stage-video.video-bg-difference,
+#pet-stage-image.video-bg-difference {
+  mix-blend-mode: difference;
+}
+#pet-stage-video.video-bg-exclusion,
+#pet-stage-image.video-bg-exclusion {
+  mix-blend-mode: exclusion;
+}
+#pet-stage-video.video-bg-hue,
+#pet-stage-image.video-bg-hue {
+  mix-blend-mode: hue;
+}
+#pet-stage-video.video-bg-saturation,
+#pet-stage-image.video-bg-saturation {
+  mix-blend-mode: saturation;
+}
+#pet-stage-video.video-bg-color,
+#pet-stage-image.video-bg-color {
+  mix-blend-mode: color;
+}
+#pet-stage-video.video-bg-luminosity,
+#pet-stage-image.video-bg-luminosity {
+  mix-blend-mode: luminosity;
+}
+#pet-stage-video.video-bg-plus-lighter,
+#pet-stage-image.video-bg-plus-lighter {
+  mix-blend-mode: plus-lighter;
 }
 
 /* 咀嚼动画 */
@@ -550,7 +642,10 @@ body {
   box-shadow: 0 16px 32px rgba(255, 134, 178, 0.12);
   position: relative;
   overflow: hidden;
-  height: fit-content;
+  height: min(60vh, 480px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* 顶部彩色条 */
@@ -670,6 +765,8 @@ body {
   position: relative;
   overflow-x: auto;
   padding-bottom: 4px;
+  flex: 1;
+  align-items: center;
 }
 
 /* 状态项目 */
@@ -1023,14 +1120,15 @@ body {
   100% { transform: translate(-50%, -140%) scale(1.0); opacity: 0; }
 }
 
-.dialog::backdrop { background: rgba(2, 6, 23, 0.7); }
+.dialog::backdrop { background: transparent; }
 
 .dialog {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: linear-gradient(180deg, #0b1020, #0f1530);
-  border-radius: 16px;
+  border: 2px dashed rgba(255, 134, 178, 0.3);
+  background: linear-gradient(180deg, #fff5fa, #f0f9ff);
+  border-radius: 18px;
   color: var(--text);
   padding: 0;
+  box-shadow: 0 18px 36px rgba(255, 134, 178, 0.24);
 }
 
 .dialog-body {
@@ -1040,12 +1138,23 @@ body {
 
 .field { display: grid; gap: 6px; margin: 12px 0; }
 .field > span { color: var(--muted); font-size: 12px; }
-.field input, .field select {
-  background: rgba(2, 6, 23, 0.35);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+.dialog .field input, .dialog .field select {
+  background: #ffffff;
+  border: 2px dashed rgba(255, 134, 178, 0.25);
   color: var(--text);
   padding: 10px 12px;
   border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(255, 134, 178, 0.08);
+}
+
+.dialog .field input:focus, .dialog .field select:focus {
+  outline: none;
+  border-color: rgba(255, 134, 178, 0.5);
+  box-shadow: 0 8px 18px rgba(255, 134, 178, 0.16);
+}
+
+.dialog-title {
+  color: var(--text);
 }
 
 .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -1125,8 +1234,8 @@ body {
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .pet-content {
-    grid-template-columns: 1fr 340px;
-    gap: 20px;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
   }
   
   .pet-status-panel {
@@ -1140,9 +1249,9 @@ body {
     padding-top: 0; /* 不再为移动端菜单按钮留空间 */
   }
   
-  /* 保留侧边栏，作为顶部下拉区显示 */
+  /* 移除顶部侧边栏列表（改由按钮+弹层展示） */
   .sidebar { 
-    display: block; 
+    display: none; 
   }
   
   /* 不使用移动端菜单按钮与抽屉入口 */
@@ -1165,6 +1274,8 @@ body {
   
   .pet-status-panel {
     padding: 16px;
+    height: auto;
+    display: block;
   }
   
   .actions {
