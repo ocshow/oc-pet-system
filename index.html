@@ -50,142 +50,33 @@
             <div class="pet-overview">
               <div class="pet-info-row">
                 <div class="pet-info-left">
-                  <div class="pet-picker">
-                    <button id="open-pet-list-btn" class="btn btn-secondary btn-inline" title="选择宠物" aria-label="选择宠物">
-                      <span aria-hidden="true">🐾</span>
-                    </button>
-                    <div id="pet-picker-dropdown" class="pet-picker-dropdown hidden" role="listbox" aria-label="选择宠物"></div>
-                  </div>
+                <div class="pet-picker">
+                  <button id="open-pet-list-btn" class="btn btn-secondary btn-inline" title="选择宠物" aria-label="选择宠物">
+                    <span aria-hidden="true">🐾</span>
+                  </button>
+                  <div id="pet-picker-dropdown" class="pet-picker-dropdown hidden" role="listbox" aria-label="选择宠物"></div>
+                </div>
                   <h2 id="pet-name" class="pet-name">—</h2>
-                  <span id="pet-species" class="pill">—</span>
-                  <span id="pet-level" class="pill">幼年期</span>
+                <span id="pet-species" class="pill">—</span>
+                <span id="pet-level" class="pill">幼年期</span>
                 </div>
                 <button id="rename-btn" class="btn btn-secondary btn-inline" title="重命名">✏️ 重命名</button>
               </div>
             </div>
           </header>
 
+          
+
           <div class="pet-content">
             <div class="pet-left">
-              <!-- 左侧宠物展示区 -->
-              <div class="pet-stage">
-                <!-- 宠物视频展示 -->
-                <div class="pet-media-container">
-                  <video id="pet-stage-video" autoplay muted loop playsinline>
-                    <source id="pet-video-source" type="video/mp4">
-                  </video>
-                  <img id="pet-stage-image" alt="宠物" />
+              <div class="pet-status-panel pet-status-panel--slim">
+                <div class="sparkle">✨</div>
+                <div class="floating-hearts">
+                  <span class="heart">💖</span>
+                  <span class="heart">💕</span>
+                  <span class="heart">💗</span>
                 </div>
-                <div id="pet-effects" class="pet-effects" aria-hidden="true"></div>
-              </div>
-              <!-- 互动操作（移动到宠物容器下方，横向排列） -->
-              <div class="actions-bar" aria-label="互动操作">
-                <div class="actions">
-                  <button id="feed-btn" class="btn action-btn">
-                    <span class="action-emoji">🍖</span>
-                    <span class="action-text">喂食</span>
-                  </button>
-                  <button id="clean-btn" class="btn action-btn">
-                    <span class="action-emoji">🧼</span>
-                    <span class="action-text">清洁</span>
-                  </button>
-                  <button id="sleep-btn" class="btn action-btn">
-                    <span class="action-emoji">🛌</span>
-                    <span class="action-text">睡觉</span>
-                  </button>
-                  <button id="play-btn" class="btn action-btn">
-                    <span class="action-emoji">🪀</span>
-                    <span class="action-text">玩耍</span>
-                  </button>
-                  <button id="video-bg-btn" class="btn action-btn" title="切换背景处理模式" style="display: none;">
-                    <span class="action-emoji">🎨</span>
-                    <span class="action-text">背景</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 右侧状态信息区 -->
-            <div class="pet-status-panel">
-              <div class="sparkle">✨</div>
-              <div class="floating-hearts">
-                <span class="heart">💖</span>
-                <span class="heart">💕</span>
-                <span class="heart">💗</span>
-              </div>
-              
-              <!-- 小游戏（移动到状态面板顶部） -->
-              <div id="play-panel" class="play-panel hidden" aria-labelledby="play-panel-title" style="position: relative;">
-                <button id="play-panel-close" class="btn btn-secondary btn-compact" title="关闭" aria-label="关闭" style="position: absolute; top: 8px; right: 8px; z-index: 10;">✕</button>
-                <div class="play-panel-header">
-                  <h4 id="play-panel-title">小游戏</h4>
-                  <button id="play-inline-close" class="btn btn-secondary btn-compact" title="收起">收起</button>
-                </div>
-                <div class="tabs" role="tablist" aria-label="小游戏类型">
-                  <button class="tab-button active" data-tab="riddle" role="tab" aria-selected="true">猜谜语</button>
-                  <button class="tab-button" data-tab="joke" role="tab" aria-selected="false">讲笑话</button>
-                  <button class="tab-button" data-tab="soup" role="tab" aria-selected="false">海龟汤</button>
-                  <button class="tab-button" data-tab="number" role="tab" aria-selected="false">猜数字</button>
-                </div>
-                <div class="tab-panels">
-                  <section class="tab-panel" data-panel="riddle">
-                    <div class="game-block">
-                      <div id="riddle-question" class="game-question">—</div>
-                      <div class="game-actions">
-                        <input id="riddle-input" class="game-input" type="text" placeholder="输入你的答案" />
-                        <button id="riddle-submit" class="btn btn-primary">提交</button>
-                      </div>
-                      <div class="game-secondary-actions">
-                        <button id="riddle-hint" class="btn btn-secondary">提示</button>
-                        <button id="riddle-reveal" class="btn btn-secondary">揭晓</button>
-                        <button id="riddle-next" class="btn btn-secondary">换一题</button>
-                      </div>
-                      <div id="riddle-feedback" class="game-feedback"></div>
-                    </div>
-                  </section>
-                  <section class="tab-panel hidden" data-panel="joke">
-                    <div class="game-block">
-                      <div id="joke-text" class="game-question">—</div>
-                      <div class="game-actions">
-                        <button id="joke-laugh" class="btn btn-primary">哈哈</button>
-                        <button id="joke-next" class="btn btn-secondary">换一个</button>
-                      </div>
-                    </div>
-                  </section>
-                  <section class="tab-panel hidden" data-panel="soup">
-                    <div class="game-block">
-                      <div id="soup-story" class="game-question">—</div>
-                      <div class="game-actions">
-                        <input id="soup-guess-input" class="game-input" type="text" placeholder="输入你认为的真相或提问（可直接猜答案）" />
-                        <button id="soup-guess-submit" class="btn btn-primary">提交猜测</button>
-                      </div>
-                      <div id="soup-guess-feedback" class="game-feedback"></div>
-                      <div class="game-secondary-actions">
-                        <button id="soup-hint" class="btn btn-secondary">提示</button>
-                        <button id="soup-answer" class="btn btn-secondary">揭晓</button>
-                        <button id="soup-next" class="btn btn-secondary">换一题</button>
-                      </div>
-                      <div id="soup-extra" class="game-feedback"></div>
-                    </div>
-                  </section>
-                  <section class="tab-panel hidden" data-panel="number">
-                    <button id="number-close-float" class="btn btn-secondary btn-compact" title="关闭" aria-label="关闭" style="position: absolute; top: 8px; right: 8px;">✕</button>
-                    <div class="game-block">
-                      <div id="number-desc" class="game-question">我想了一个 1-20 的数字，来猜猜看！</div>
-                      <div class="game-actions">
-                        <input id="number-input" class="game-input" type="number" min="1" max="20" placeholder="1-20" />
-                        <button id="number-submit" class="btn btn-primary">提交</button>
-                        <button id="number-restart" class="btn btn-secondary">重开</button>
-                      </div>
-                      <div id="number-feedback" class="game-feedback"></div>
-                    </div>
-                  </section>
-                </div>
-              </div>
-              
-
-              
-              <div class="stats-container">
+                <div class="stats-container">
                 <div class="stat-item">
                   <div class="stat-icon">🍖</div>
                   <div class="stat-content">
@@ -242,17 +133,123 @@
                   <div class="stat-icon">🌱</div>
                   <div class="stat-content">
                     <div class="stat-label">
-                      <span>成长值</span>
-                      <span id="stat-xp-text" class="stat-text">0/100</span>
+                      <span>亲密值</span>
+                      <span id="stat-xp-text" class="stat-text">0</span>
                     </div>
                     <div class="progress">
                       <div id="stat-xp" class="progress-bar xp-bar"></div>
                     </div>
                   </div>
                 </div>
+                </div>
+              </div>
+              <!-- 左侧宠物展示区 -->
+              <div class="pet-stage">
+                <!-- 宠物视频展示 -->
+                <div class="pet-media-container">
+                  <video id="pet-stage-video" autoplay muted loop playsinline>
+                    <source id="pet-video-source" type="video/mp4">
+                  </video>
+                  <img id="pet-stage-image" alt="宠物" />
+                </div>
+                <div id="pet-effects" class="pet-effects" aria-hidden="true"></div>
+              </div>
+              <!-- 互动操作（移动到宠物容器下方，横向排列） -->
+              <div class="actions-bar" aria-label="互动操作">
+                <div class="actions">
+                  <button id="feed-btn" class="btn action-btn">
+                    <span class="action-emoji">🍖</span>
+                    <span class="action-text">喂食</span>
+                  </button>
+                  <button id="clean-btn" class="btn action-btn">
+                    <span class="action-emoji">🧼</span>
+                    <span class="action-text">清洁</span>
+                  </button>
+                  <button id="sleep-btn" class="btn action-btn">
+                    <span class="action-emoji">🛌</span>
+                    <span class="action-text">睡觉</span>
+                  </button>
+                  <button id="play-btn" class="btn action-btn">
+                    <span class="action-emoji">🪀</span>
+                    <span class="action-text">玩耍</span>
+                  </button>
+                  <button id="video-bg-btn" class="btn action-btn" title="切换背景处理模式" style="display: none;">
+                    <span class="action-emoji">🎨</span>
+                    <span class="action-text">背景</span>
+                  </button>
+                </div>
               </div>
 
+              <!-- 小游戏面板（默认隐藏，点击“玩耍”时作为浮层显示） -->
+              <div id="play-panel" class="play-panel hidden" aria-labelledby="play-panel-title" style="position: relative;">
+                <button id="play-panel-close" class="btn btn-secondary btn-compact" title="关闭" aria-label="关闭" style="position: absolute; top: 8px; right: 8px; z-index: 10;">✕</button>
+                <div class="play-panel-header">
+                  <h4 id="play-panel-title">小游戏</h4>
+                  <button id="play-inline-close" class="btn btn-secondary btn-compact" title="收起">收起</button>
+                </div>
+                <div class="tabs" role="tablist" aria-label="小游戏类型">
+                  <button class="tab-button active" data-tab="riddle" role="tab" aria-selected="true">猜谜语</button>
+                  <button class="tab-button" data-tab="joke" role="tab" aria-selected="false">讲笑话</button>
+                  <button class="tab-button" data-tab="soup" role="tab" aria-selected="false">海龟汤</button>
+                  <button class="tab-button" data-tab="number" role="tab" aria-selected="false">猜数字</button>
+                </div>
+                <div class="tab-panels">
+                  <section class="tab-panel" data-panel="riddle">
+                    <div class="game-block">
+                      <div id="riddle-question" class="game-question">—</div>
+                      <div class="game-actions">
+                        <input id="riddle-input" class="game-input" type="text" placeholder="输入你的答案" />
+                        <button id="riddle-submit" class="btn btn-primary">提交</button>
+                      </div>
+                      <div class="game-secondary-actions">
+                        <button id="riddle-hint" class="btn btn-secondary">提示</button>
+                        <button id="riddle-reveal" class="btn btn-secondary">揭晓</button>
+                        <button id="riddle-next" class="btn btn-secondary">换一题</button>
+                      </div>
+                      <div id="riddle-feedback" class="game-feedback"></div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="joke">
+                    <div class="game-block">
+                      <div id="joke-text" class="game-question">—</div>
+                      <div class="game-actions">
+                        <button id="joke-laugh" class="btn btn-primary">哈哈</button>
+                        <button id="joke-next" class="btn btn-secondary">换一个</button>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="soup">
+                    <div class="game-block">
+                      <div id="soup-story" class="game-question">—</div>
+                      <div class="game-actions">
+                        <input id="soup-guess-input" class="game-input" type="text" placeholder="输入你认为的真相或提问（可直接猜答案）" />
+                        <button id="soup-guess-submit" class="btn btn-primary">提交猜测</button>
+                      </div>
+                      <div id="soup-guess-feedback" class="game-feedback"></div>
+                      <div class="game-secondary-actions">
+                        <button id="soup-hint" class="btn btn-secondary">提示</button>
+                        <button id="soup-answer" class="btn btn-secondary">揭晓</button>
+                        <button id="soup-next" class="btn btn-secondary">换一题</button>
+                      </div>
+                      <div id="soup-extra" class="game-feedback"></div>
+                    </div>
+                  </section>
+                  <section class="tab-panel hidden" data-panel="number">
+                    <div class="game-block">
+                      <div id="number-desc" class="game-question">我想了一个 1-20 的数字，来猜猜看！</div>
+                      <div class="game-actions">
+                        <input id="number-input" class="game-input" type="number" min="1" max="20" placeholder="1-20" />
+                        <button id="number-submit" class="btn btn-primary">提交</button>
+                        <button id="number-restart" class="btn btn-secondary">重开</button>
+                      </div>
+                      <div id="number-feedback" class="game-feedback"></div>
+                    </div>
+                  </section>
+                </div>
+              </div>
             </div>
+
+            <!-- 右侧状态信息区已移除外框与内容（按你的要求删除） -->
           </div>
 
           

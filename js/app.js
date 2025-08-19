@@ -47,45 +47,15 @@
     // 初始不加载图片，避免无意义的 404；仅在失败/超时时回退到图片
     videoEl.style.display = 'none';
     imgEl.style.display = 'none';
-    
-    const setVideoSources = (baseUrl, preferMp4First) => {
-      while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
-    const webmSource = document.createElement('source');
-      webmSource.src = `${baseUrl}.webm`;
-    webmSource.type = 'video/webm';
-    const mp4Source = document.createElement('source');
-      mp4Source.src = `${baseUrl}.mp4`;
-    mp4Source.type = 'video/mp4';
-      if (preferMp4First) { videoEl.appendChild(mp4Source); videoEl.appendChild(webmSource); }
-      else { videoEl.appendChild(webmSource); videoEl.appendChild(mp4Source); }
-    };
-    
-    const setSingleSource = (baseUrl, ext, mime) => {
+    // 仅尝试 WebM 视频；失败或超时则回退 PNG 图片
     while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
-      const s = document.createElement('source');
-      s.src = `${baseUrl}.${ext}`;
-      s.type = mime;
-      videoEl.appendChild(s);
-    };
-
-    // 按浏览器支持度选择顺序：优先 mp4，再 webm
-    const canMp4 = typeof videoEl.canPlayType === 'function' && videoEl.canPlayType('video/mp4');
-    const canWebm = typeof videoEl.canPlayType === 'function' && videoEl.canPlayType('video/webm');
-    const preferMp4First = (canMp4 === 'probably' || canMp4 === 'maybe') && !(canWebm === 'probably');
-
-    // 若两者都不支持，直接回退图片
-    if (!canMp4 && !canWebm) {
-      imgEl.style.display = 'block';
-      loadPetImage(imgEl, key);
-      return;
-    }
-
-    setVideoSources(base, preferMp4First);
+    const webmSource = document.createElement('source');
+    webmSource.src = `${base}.webm`;
+    webmSource.type = 'video/webm';
+    videoEl.appendChild(webmSource);
     try { videoEl.muted = true; videoEl.playsInline = true; } catch (_) {}
     videoEl.load();
     
-    let attemptedAlternate = false;
-
     const toImageFallback = () => {
       videoEl.style.display = 'none';
       imgEl.style.display = 'block';
@@ -96,20 +66,6 @@
 
     videoEl.onerror = () => {
       clearTimeout(videoTimeout);
-      // 尝试备用格式一次（只用 webm 或只用 mp4），避免首选不存在时直接失败
-      if (!attemptedAlternate) {
-        attemptedAlternate = true;
-        if (preferMp4First && (canWebm === 'probably' || canWebm === 'maybe')) {
-          setSingleSource(base, 'webm', 'video/webm');
-          videoEl.load();
-          return;
-        }
-        if (!preferMp4First && (canMp4 === 'probably' || canMp4 === 'maybe')) {
-          setSingleSource(base, 'mp4', 'video/mp4');
-          videoEl.load();
-          return;
-        }
-      }
       toImageFallback();
     };
 
@@ -229,6 +185,7 @@
       happiness: 70,
       energy: 70,
       cleanliness: 80,
+      xp: 0, // 新增：亲密值
       stage: '',
       lastUpdated: timestamp
     };
@@ -240,12 +197,14 @@
     const energyDelta = -0.5 * minutes;
     const cleanlinessDelta = -0.3 * minutes;
     const happinessDelta = (pet.hunger > 70 ? -0.5 : -0.2) * minutes;
+    const xpDelta = -0.1 * minutes; // 新增：亲密值时间衰减
     return {
       ...pet,
       hunger: clamp(pet.hunger + hungerDelta, 0, 100),
       energy: clamp(pet.energy + energyDelta, 0, 100),
       cleanliness: clamp(pet.cleanliness + cleanlinessDelta, 0, 100),
       happiness: clamp(pet.happiness + happinessDelta, 0, 100),
+      xp: clamp(pet.xp + xpDelta, 0, 999), // 新增：亲密值变化，最高999
       lastUpdated: pet.lastUpdated + minutes * 60000
     };
   }
@@ -255,7 +214,8 @@
       return {
         ...pet,
         hunger: clamp(pet.hunger - 20, 0, 100),
-        happiness: clamp(pet.happiness + 5, 0, 100)
+        happiness: clamp(pet.happiness + 5, 0, 100),
+        xp: clamp(pet.xp + 3, 0, 999) // 新增：喂食获得3亲密值
       };
     },
     play(pet) {
@@ -263,20 +223,23 @@
         ...pet,
         happiness: clamp(pet.happiness + 15, 0, 100),
         energy: clamp(pet.energy - 15, 0, 100),
-        cleanliness: clamp(pet.cleanliness - 10, 0, 100)
+        cleanliness: clamp(pet.cleanliness - 10, 0, 100),
+        xp: clamp(pet.xp + 5, 0, 999) // 新增：玩耍获得5亲密值
       };
     },
     sleep(pet) {
       return {
         ...pet,
         energy: clamp(pet.energy + 25, 0, 100),
-        hunger: clamp(pet.hunger + 10, 0, 100)
+        hunger: clamp(pet.hunger + 10, 0, 100),
+        xp: clamp(pet.xp + 2, 0, 999) // 新增：睡觉获得2亲密值
       };
     },
     clean(pet) {
       return {
         ...pet,
-        cleanliness: clamp(pet.cleanliness + 40, 0, 100)
+        cleanliness: clamp(pet.cleanliness + 40, 0, 100),
+        xp: clamp(pet.xp + 4, 0, 999) // 新增：清洁获得4亲密值
       };
     }
   };
@@ -332,6 +295,7 @@
         happiness: clamp(typeof src.happiness === 'number' ? src.happiness : 70, 0, 100),
         energy: clamp(typeof src.energy === 'number' ? src.energy : 70, 0, 100),
         cleanliness: clamp(typeof src.cleanliness === 'number' ? src.cleanliness : 80, 0, 100),
+        xp: clamp(typeof src.xp === 'number' ? src.xp : 0, 0, 999), // 新增：亲密值
         stage: typeof src.stage === 'string' ? src.stage : '',
         lastUpdated: typeof src.lastUpdated === 'number' ? src.lastUpdated : nowMs(),
       };
@@ -431,35 +395,45 @@
     return `${y}-${m}-${day} ${hh}:${mm}`;
   }
 
-  function renderPetDetail(pet) {
-    nameEl.textContent = pet.name;
-    speciesEl.textContent = pet.species;
-    levelEl.textContent = pet.stage && pet.stage.trim() ? pet.stage : '';
-    loadPetMedia(pet);
-
+  function updateStatsUI(pet) {
     const hungerPercent = pet.hunger;
     const happinessPercent = pet.happiness;
     const energyPercent = pet.energy;
     const cleanlinessPercent = pet.cleanliness;
+    const xpPercent = Math.min(100, (pet.xp / 100) * 100); // 亲密值显示为百分比
 
     // 更新进度条宽度
     hungerBar.style.width = `${hungerPercent}%`;
     happinessBar.style.width = `${happinessPercent}%`;
     energyBar.style.width = `${energyPercent}%`;
     cleanlinessBar.style.width = `${cleanlinessPercent}%`;
+    xpBar.style.width = `${xpPercent}%`;
 
-    // 添加低值警告效果
+    // 低值警告
     hungerBar.classList.toggle('low', hungerPercent < 30);
     happinessBar.classList.toggle('low', happinessPercent < 30);
     energyBar.classList.toggle('low', energyPercent < 30);
     cleanlinessBar.classList.toggle('low', cleanlinessPercent < 30);
+    xpBar.classList.toggle('low', xpPercent < 30);
 
+    // 数值文本
     hungerText.textContent = `${Math.round(pet.hunger)}`;
     happinessText.textContent = `${Math.round(pet.happiness)}`;
     energyText.textContent = `${Math.round(pet.energy)}`;
     cleanlinessText.textContent = `${Math.round(pet.cleanliness)}`;
+    xpText.textContent = `${Math.round(pet.xp)}`; // 显示实际亲密值
 
+    // 更新时间
     lastUpdatedEl.textContent = `上次更新：${formatTime(pet.lastUpdated)}`;
+  }
+
+  function renderPetDetail(pet) {
+    nameEl.textContent = pet.name;
+    speciesEl.textContent = pet.species;
+    levelEl.textContent = pet.stage && pet.stage.trim() ? pet.stage : '';
+    // 仅在进入/切换宠物时加载媒体，避免行动时闪烁
+    loadPetMedia(pet);
+    updateStatsUI(pet);
   }
 
   // ---------- Pet Animations ----------
@@ -528,6 +502,11 @@
         }, i * 120);
       }
     }
+
+    // 通用：更丰富的下雨型粒子效果
+    if (kind === 'feed' || kind === 'clean' || kind === 'sleep') {
+      rainShower(kind);
+    }
   }
 
   // ---------- Actions ----------
@@ -540,17 +519,20 @@
     updated.lastUpdated = nowMs();
     state.pets[idx] = updated;
     saveState(state);
-    render();
+    // 仅更新数值，不重载媒体，避免闪烁
+    updateStatsUI(updated);
   }
 
   // 完成小游戏后给予奖励
   function rewardAfterMiniGame(kind) {
-    const bonus = kind === 'joke' ? 8 : kind === 'riddle' ? 12 : kind === 'soup' ? 15 : 10;
+    const happinessBonus = kind === 'joke' ? 8 : kind === 'riddle' ? 12 : kind === 'soup' ? 15 : 10;
+    const xpBonus = kind === 'joke' ? 6 : kind === 'riddle' ? 8 : kind === 'soup' ? 10 : 7; // 新增：小游戏亲密值奖励
     updateSelected((pet) => {
       const updated = {
         ...pet,
-        happiness: clamp(pet.happiness + bonus, 0, 100),
+        happiness: clamp(pet.happiness + happinessBonus, 0, 100),
         energy: clamp(pet.energy - 5, 0, 100),
+        xp: clamp(pet.xp + xpBonus, 0, 999), // 新增：小游戏获得亲密值
       };
       return updated;
     });
@@ -686,7 +668,8 @@
     const updated = applyTimeDelta(pet, minutes);
     state.pets[idx] = updated;
     saveState(state);
-    renderPetDetail(updated);
+    // 周期性仅刷新数值，避免频繁重载媒体导致闪烁
+    updateStatsUI(updated);
   }, 10_000); // 每10秒检查一次是否跨分钟
 
   // ---------- Initial Render ----------
@@ -1141,23 +1124,20 @@
 
   function randomBetween(min, max) { return Math.random() * (max - min) + min; }
 
-  function createParticle(x, y) {
+  function createParticle(x, y, options = {}) {
     if (!effectsEl) return;
     const el = document.createElement('div');
     el.className = 'particle';
+    const mode = options.mode || 'default';
+    let size, dx, dy, dur, emoji, anim;
+    if (mode === 'rain') {
+      // 使用原先的粒子符号，但采用下落运动与更大的尺寸/更多数量
     const type = Math.floor(Math.random() * 6);
-    const size = randomBetween(16, 30);
-    const dx = randomBetween(-80, 80);
-    const dy = randomBetween(120, 200);
-    const dur = randomBetween(1.0, 1.8);
-    el.style.setProperty('--x', x + 'px');
-    el.style.setProperty('--y', y + 'px');
-    el.style.setProperty('--dx', dx + 'px');
-    el.style.setProperty('--dy', dy + 'px');
-    el.style.setProperty('--dur', dur + 's');
-    el.style.fontSize = size + 'px';
-    // 更多样式：爱心、星、泡泡、气球、花朵、闪电
-    el.textContent = (
+      size = randomBetween(24, 36);
+      dx = randomBetween(-30, 30);
+      dy = randomBetween(160, 260);
+      dur = randomBetween(0.9, 1.6);
+      emoji = (
       type === 0 ? '💖' :
       type === 1 ? '✨' :
       type === 2 ? '✰' :
@@ -1165,16 +1145,94 @@
       type === 4 ? '🌸' :
       '⚡'
     );
-    // 随机动画方向
-    const anim = Math.random() < 0.33 ? 'float-left' : (Math.random() < 0.5 ? 'float-right' : 'float-up');
+      if (options.emoji) emoji = options.emoji;
+      anim = 'rain-down';
+    } else if (mode === 'rise') {
+      // 自下而上漂浮（用于睡觉）
+      const type = Math.floor(Math.random() * 6);
+      size = randomBetween(22, 34);
+      dx = randomBetween(-24, 24);
+      dy = randomBetween(140, 240); // 向上位移由 float-up 完成
+      dur = randomBetween(1.0, 1.8);
+      emoji = options.emoji || '💤';
+      anim = 'float-up';
+    } else {
+      const type = Math.floor(Math.random() * 6);
+      size = randomBetween(16, 30);
+      // 增加运动范围，让粒子更分散
+      dx = randomBetween(-120, 120); // 增加水平运动范围
+      dy = randomBetween(100, 280); // 增加垂直运动范围
+      dur = randomBetween(1.2, 2.2); // 增加持续时间
+      emoji = (
+        type === 0 ? '💖' :
+        type === 1 ? '✨' :
+        type === 2 ? '✰' :
+        type === 3 ? '🎈' :
+        type === 4 ? '🌸' :
+        '⚡'
+      );
+      // 更随机的动画方向
+      const animTypes = ['float-left', 'float-right', 'float-up', 'float-down'];
+      anim = animTypes[Math.floor(Math.random() * animTypes.length)];
+    }
+    el.style.setProperty('--x', x + 'px');
+    el.style.setProperty('--y', y + 'px');
+    el.style.setProperty('--dx', dx + 'px');
+    el.style.setProperty('--dy', dy + 'px');
+    el.style.setProperty('--dur', dur + 's');
+    el.style.fontSize = size + 'px';
+    el.textContent = options.emoji || emoji;
     el.style.setProperty('--anim', anim);
     effectsEl.appendChild(el);
     setTimeout(() => el.remove(), dur * 1000);
   }
 
   function createPairAt(x, y) {
-    createParticle(x + randomBetween(-12, 12), y + randomBetween(-12, 12));
-    createParticle(x + randomBetween(-12, 12), y + randomBetween(-12, 12));
+    // 增加分散范围，让粒子更分散
+    const spreadX = 40; // 水平分散范围
+    const spreadY = 30; // 垂直分散范围
+    createParticle(x + randomBetween(-spreadX, spreadX), y + randomBetween(-spreadY, spreadY));
+    createParticle(x + randomBetween(-spreadX, spreadX), y + randomBetween(-spreadY, spreadY));
+  }
+
+  function rainShower(kind) {
+    if (!stageEl) return;
+    const rect = stageEl.getBoundingClientRect();
+    // 数量更大、更密集
+    const count = kind === 'clean' ? 48 : (kind === 'feed' ? 40 : 32);
+    // 使用二维网格+抖动，做“满天星”分布
+    const rows = Math.max(1, Math.round(Math.sqrt(count)));
+    const cols = Math.max(1, Math.ceil(count / rows));
+    const cellW = rect.width / cols;
+    const cellH = rect.height / rows;
+    for (let i = 0; i < count; i++) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const baseX = c * cellW + cellW / 2;
+      const baseY = r * cellH + cellH / 2;
+      const x = clamp(baseX + (Math.random() - 0.5) * cellW * 0.9, 6, rect.width - 6);
+      let y;
+      if (kind === 'sleep') {
+        // 睡觉：自下而上，起点分布在下半区域并加抖动
+        const bottomBandTop = rect.height * 0.55;
+        const jitterY = (Math.random() - 0.5) * cellH * 0.8;
+        y = clamp(Math.max(baseY, bottomBandTop) + jitterY, rect.height * 0.55, rect.height - 8);
+      } else {
+        // 喂食/清洁：从各处往下落，起点覆盖全区域并允许略高/略低越界，增强自然感
+        const jitterY = (Math.random() - 0.5) * cellH * 0.9;
+        y = baseY + jitterY - rect.height * 0.15 * Math.random();
+      }
+      const delay = (r * cols + c) * 12 + Math.random() * 60; // 纵横交错的时间抖动
+      if (kind === 'sleep') {
+        setTimeout(() => createParticle(x, y, { mode: 'rise', emoji: '💤' }), delay);
+      } else if (kind === 'feed') {
+        setTimeout(() => createParticle(x, y, { mode: 'rain', emoji: '🍖' }), delay);
+      } else {
+        const bubbles = ['🫧', '⚪', '🔵', '◌', '◯'];
+        const emoji = bubbles[Math.floor(Math.random() * bubbles.length)];
+        setTimeout(() => createParticle(x, y, { mode: 'rain', emoji }), delay);
+      }
+    }
   }
 
   const TALK_TEXTS = [
@@ -1199,11 +1257,17 @@
     const rect = stageEl.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-    const pairs = 5; // 共生成5对
+    const pairs = 8; // 增加粒子对数量
+    
+    // 在点击点周围生成多个分散的粒子对
     for (let i = 0; i < pairs; i++) {
-      const delay = i * 120 + randomBetween(0, 80);
-      setTimeout(() => createPairAt(x, y), delay);
+      const delay = i * 80 + randomBetween(0, 60); // 减少延迟间隔
+      // 在点击点周围随机位置生成粒子对
+      const offsetX = randomBetween(-20, 20);
+      const offsetY = randomBetween(-20, 20);
+      setTimeout(() => createPairAt(x + offsetX, y + offsetY), delay);
     }
+    
     // 30% 概率出现对话泡泡
     if (Math.random() < 0.3) {
       const bDelay = 120 + Math.random() * 200;

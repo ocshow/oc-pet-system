@@ -20,6 +20,8 @@
 html, body {
   height: 100%;
 }
+/* iOS 避免自动放大字体，减少真机与模拟差异 */
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
@@ -35,7 +37,9 @@ body {
 .app {
   display: grid;
   grid-template-columns: 320px 1fr;
-  height: 100vh;
+  height: 100vh; /* 桌面 */
+  height: 100dvh; /* 移动端地址栏折叠时更准确的可视高度 */
+  min-height: 100svh; /* 兼容早期实现 */
 }
 
 .sidebar {
@@ -113,6 +117,11 @@ body {
 .main {
   padding: 24px 28px;
   overflow: auto;
+}
+/* 刘海/手势区安全区内边距：在不影响桌面端的同时增强移动端稳态 */
+.main {
+  padding-left: max(28px, env(safe-area-inset-left));
+  padding-right: max(28px, env(safe-area-inset-right));
 }
 
 .empty-state {
@@ -1084,6 +1093,19 @@ body {
   100% { transform: translate(calc(var(--x, 0) + 60px), calc(var(--y, 0) - 140px)) scale(1.25) rotate(15deg); opacity: 0; }
 }
 
+@keyframes float-down {
+  0% { transform: translate(var(--x, 0), var(--y, 0)) scale(0.7) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(calc(var(--x, 0) + var(--dx, 0px)), calc(var(--y, 0) + var(--dy, 120px))) scale(1.2) rotate(-10deg); opacity: 0; }
+}
+
+/* 下雨型粒子动画：自上而下落下并稍微抖动 */
+@keyframes rain-down {
+  0% { transform: translate(var(--x, 0), var(--y, 0)) scale(0.9) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(calc(var(--x, 0) + var(--dx, 0px)), calc(var(--y, 0) + var(--dy, 160px))) scale(1.0) rotate(10deg); opacity: 0; }
+}
+
 /* 文字泡泡对话框 */
 .bubble {
   position: absolute;
@@ -1325,6 +1347,12 @@ body {
     height: 5px;
     min-height: 5px;
   }
+}
+
+/* 小屏横屏时的高度微调，降低布局跳动 */
+@media (orientation: landscape) and (max-width: 920px) {
+  .pet-stage { height: 50vh; }
+  .pet-status-panel { height: auto; }
 }
 
 @media (max-width: 480px) {
