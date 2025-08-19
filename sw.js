@@ -1,15 +1,14 @@
 const CACHE_NAME = 'oc-pet-system-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/manifest.json',
-  '/assets/pet-001.png',
-  '/assets/pet-001.webm',
-  '/assets/pet-002.png',
-  '/assets/pet-003.png',
-  '/assets/pet-004.png'
+  './index.html',
+  'css/styles.css',
+  'js/app.js',
+  'manifest.json',
+  'assets/pet-001.png',
+  'assets/pet-001.webm',
+  'assets/pet-002.png',
+  'assets/pet-003.png',
+  'assets/pet-004.png'
 ];
 
 // 安装Service Worker
