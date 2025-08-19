@@ -672,8 +672,174 @@
     updateStatsUI(updated);
   }, 10_000); // 每10秒检查一次是否跨分钟
 
+  // ---------- PWA桌宠模式支持 ----------
+  let isDesktopPetMode = false;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let petPositionX = 0;
+  let petPositionY = 0;
+
+  // 检测是否为PWA桌宠模式
+  function checkDesktopPetMode() {
+    isDesktopPetMode = window.matchMedia('(display-mode: standalone)').matches;
+    if (isDesktopPetMode) {
+      console.log('桌宠模式已启用');
+      initDesktopPetMode();
+    }
+  }
+
+  // 初始化桌宠模式
+  function initDesktopPetMode() {
+    const petStage = document.querySelector('.pet-stage');
+    if (!petStage) return;
+
+    // 从本地存储加载宠物位置
+    const savedPosition = localStorage.getItem('pet-position');
+    if (savedPosition) {
+      const pos = JSON.parse(savedPosition);
+      petPositionX = pos.x;
+      petPositionY = pos.y;
+      updatePetPosition();
+    }
+
+    // 添加拖拽事件监听
+    petStage.addEventListener('mousedown', startDrag);
+    petStage.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+  }
+
+  // 开始拖拽
+  function startDrag(e) {
+    if (!isDesktopPetMode) return;
+    
+    isDragging = true;
+    const rect = e.target.getBoundingClientRect();
+    
+    if (e.type === 'mousedown') {
+      dragStartX = e.clientX - rect.left;
+      dragStartY = e.clientY - rect.top;
+    } else if (e.type === 'touchstart') {
+      e.preventDefault();
+      dragStartX = e.touches[0].clientX - rect.left;
+      dragStartY = e.touches[0].clientY - rect.top;
+    }
+  }
+
+  // 拖拽中
+  function onDrag(e) {
+    if (!isDesktopPetMode || !isDragging) return;
+    
+    e.preventDefault();
+    
+    let clientX, clientY;
+    if (e.type === 'mousemove') {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else if (e.type === 'touchmove') {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    }
+
+    const petStage = document.querySelector('.pet-stage');
+    if (!petStage) return;
+
+    const stageRect = petStage.getBoundingClientRect();
+    const stageWidth = stageRect.width;
+    const stageHeight = stageRect.height;
+    
+    // 计算新位置，确保不超出屏幕边界
+    const newX = Math.max(0, Math.min(window.innerWidth - stageWidth, clientX - dragStartX));
+    const newY = Math.max(0, Math.min(window.innerHeight - stageHeight, clientY - dragStartY));
+    
+    petPositionX = newX;
+    petPositionY = newY;
+    
+    updatePetPosition();
+  }
+
+  // 结束拖拽
+  function endDrag() {
+    if (!isDesktopPetMode) return;
+    
+    isDragging = false;
+    
+    // 保存位置到本地存储
+    localStorage.setItem('pet-position', JSON.stringify({
+      x: petPositionX,
+      y: petPositionY
+    }));
+  }
+
+  // 更新宠物位置
+  function updatePetPosition() {
+    const petStage = document.querySelector('.pet-stage');
+    if (!petStage) return;
+    
+    petStage.style.transform = `translate(${petPositionX}px, ${petPositionY}px)`;
+  }
+
+  // 检测PWA模式变化
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', checkDesktopPetMode);
+
+  // ---------- PWA安装提示 ----------
+  let deferredPrompt;
+
+  // 监听beforeinstallprompt事件
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // 显示安装提示
+    setTimeout(() => {
+      showInstallPrompt();
+    }, 3000); // 3秒后显示
+  });
+
+  // 显示安装提示
+  function showInstallPrompt() {
+    if (isDesktopPetMode) return; // 已经是桌宠模式则不显示
+    
+    const prompt = document.getElementById('pwa-install-prompt');
+    if (prompt) {
+      prompt.style.display = 'flex';
+    }
+  }
+
+  // 安装PWA
+  function installPWA() {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('用户接受了PWA安装');
+      } else {
+        console.log('用户拒绝了PWA安装');
+      }
+      deferredPrompt = null;
+      hideInstallPrompt();
+    });
+  }
+
+  // 隐藏安装提示
+  function hideInstallPrompt() {
+    const prompt = document.getElementById('pwa-install-prompt');
+    if (prompt) {
+      prompt.style.display = 'none';
+    }
+  }
+
+  // 绑定安装提示按钮事件
+  document.getElementById('pwa-install-btn')?.addEventListener('click', installPWA);
+  document.getElementById('pwa-dismiss-btn')?.addEventListener('click', hideInstallPrompt);
+
   // ---------- Initial Render ----------
   render();
+  checkDesktopPetMode();
 
   // ---------- Mini Games (Play) ----------
   const playInlineClose = document.getElementById('play-inline-close');
