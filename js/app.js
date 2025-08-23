@@ -11,11 +11,10 @@
 
   const speciesToEmoji = (species) => {
     switch (species) {
-      case '猫': return '🐱';
-      case '狗': return '🐶';
-      case '龙': return '🐉';
-      case '狐狸': return '🦊';
-      case '兔子': return '🐰';
+      case '猫猫': return '🐱';
+      case '鱼鱼': return '🐠';
+      case '白鸟': return '🕊️';
+      case '九尾': return '🦊';
       default: return '🐾';
     }
   };
@@ -27,9 +26,10 @@
 
   const speciesKey = (species) => {
     switch (species) {
-      case '猫': return 'cat';
-      case '狗': return 'dog';
-      case '龙': return 'dragon';
+      case '猫猫': return 'cat';
+      case '鱼鱼': return 'fish';
+      case '白鸟': return 'bird';
+      case '狐狸': return 'fox';
       default: return 'pet';
     }
   };
@@ -40,6 +40,15 @@
     const videoEl = document.getElementById('pet-stage-video');
     const imgEl = document.getElementById('pet-stage-image');
     if (!videoEl || !imgEl) return;
+    
+    console.log('=== 开始加载宝宝媒体 ===');
+    console.log('宝宝ID:', key);
+    console.log('视频元素:', videoEl);
+    console.log('图片元素:', imgEl);
+    console.log('视频元素display:', videoEl.style.display);
+    console.log('图片元素display:', imgEl.style.display);
+    console.log('视频元素可见性:', window.getComputedStyle(videoEl).display);
+    console.log('图片元素可见性:', window.getComputedStyle(imgEl).display);
     const altText = `${pet.species}`;
     videoEl.alt = altText;
     imgEl.alt = altText;
@@ -49,34 +58,61 @@
     imgEl.style.display = 'none';
     // 仅尝试 WebM 视频；失败或超时则回退 PNG 图片
     while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
-    const webmSource = document.createElement('source');
-    webmSource.src = `${base}.webm`;
-    webmSource.type = 'video/webm';
-    videoEl.appendChild(webmSource);
+    const srcCandidates = [];
+    
+    // 直接使用当前ID对应的文件
+    srcCandidates.push(`${base}.webm`);
+    
+    console.log('视频源候选:', srcCandidates);
+    console.log('当前宝宝ID:', key);
+    console.log('是否为pal前缀:', /^pal-/.test(key));
+    
+    for (const src of srcCandidates) {
+      const s = document.createElement('source');
+      s.src = src;
+      s.type = 'video/webm';
+      videoEl.appendChild(s);
+    }
     try { videoEl.muted = true; videoEl.playsInline = true; } catch (_) {}
     videoEl.load();
     
     const toImageFallback = () => {
+      console.log('回退到图片显示');
       videoEl.style.display = 'none';
       imgEl.style.display = 'block';
+      console.log('视频元素display设置为:', videoEl.style.display);
+      console.log('图片元素display设置为:', imgEl.style.display);
       loadPetImage(imgEl, key);
     };
 
-    const videoTimeout = setTimeout(() => { toImageFallback(); }, 8000);
+    // 增加超时时间，给视频更多加载时间
+    const videoTimeout = setTimeout(() => { toImageFallback(); }, 15000);
 
-    videoEl.onerror = () => {
+    videoEl.onerror = (e) => {
+      console.log('视频加载失败:', e);
+      console.log('视频错误详情:', videoEl.error);
       clearTimeout(videoTimeout);
       toImageFallback();
     };
 
     videoEl.onloadeddata = () => {
+      console.log('视频加载成功，开始播放');
+      console.log('设置视频显示为block');
       clearTimeout(videoTimeout);
       videoEl.style.display = 'block';
       imgEl.style.display = 'none';
+      console.log('视频元素display设置为:', videoEl.style.display);
+      console.log('图片元素display设置为:', imgEl.style.display);
       setTimeout(() => { initMediaBgControls(); }, 100);
+      
+      // 确保视频能够持续播放
       const playVideo = async () => {
-        try { await videoEl.play(); }
+        try { 
+          await videoEl.play();
+          console.log('视频开始播放成功');
+        }
         catch (e) {
+          console.log('视频播放失败:', e);
           if (e.name === 'NotAllowedError') {
             const playOnClick = () => { videoEl.play().catch(() => {}); document.removeEventListener('click', playOnClick); };
             document.addEventListener('click', playOnClick, { once: true });
@@ -84,15 +120,35 @@
         }
       };
       playVideo();
+      
       const videoSrc = videoEl.currentSrc || (videoEl.querySelector('source')?.src) || videoEl.src;
       if (videoSrc && /\.webm(\?|$)/i.test(videoSrc)) { videoEl.classList.add('video-bg-normal'); }
       else { videoEl.classList.add('video-bg-multiply'); }
-        videoEl.style.backgroundColor = 'transparent';
+      videoEl.style.backgroundColor = 'transparent';
+    };
+
+    // 确保视频完全加载后再开始播放
+    videoEl.oncanplaythrough = () => {
+      console.log('视频完全加载，可以流畅播放');
+      // 如果视频还没有开始播放，尝试播放
+      if (videoEl.paused) {
+        videoEl.play().catch(e => console.log('自动播放失败:', e));
+      }
     };
     
     videoEl.onended = () => {
+      console.log('视频播放结束，重新开始播放');
       videoEl.currentTime = 0;
-      videoEl.play().catch(() => { setTimeout(() => { videoEl.play().catch(() => {}); }, 100); });
+      // 确保视频继续循环播放
+      videoEl.play().catch((e) => {
+        console.log('重新播放失败:', e);
+        // 如果重新播放失败，延迟后重试
+        setTimeout(() => {
+          videoEl.play().catch(() => {
+            console.log('重试播放也失败，保持视频显示');
+          });
+        }, 100);
+      });
     };
 
     setTimeout(() => { initMediaBgControls(); }, 100);
@@ -100,27 +156,37 @@
 
   function loadPetImage(imgEl, key) {
     if (!imgEl) return;
+    
+    console.log('=== 开始加载宝宝图片 ===');
+    console.log('宝宝ID:', key);
+    
     const base = `assets/${key}`;
     imgEl.alt = key;
     imgEl.onerror = null;
-    imgEl.src = `${base}.png`;
+    
+    // 直接使用当前ID对应的文件
+    console.log('尝试加载图片:', base + '.png');
     imgEl.onerror = () => {
+      console.log('图片加载失败，使用SVG');
       imgEl.onerror = null;
-      imgEl.src = `${base}.jpg`;
-      imgEl.onerror = () => {
-        imgEl.onerror = null;
-        imgEl.src = generatePetSvg(key);
-      };
+      imgEl.src = generatePetSvg(key);
     };
+    imgEl.onload = () => {
+      console.log('图片加载成功:', imgEl.src);
+      console.log('图片元素display:', imgEl.style.display);
+      console.log('图片元素可见性:', window.getComputedStyle(imgEl).display);
+    };
+    imgEl.src = `${base}.png`;
   }
 
-  // 生成宠物 SVG Data URL（根据物种与等级出不同配色与装饰）
+  // 生成宝宝 SVG Data URL（根据物种与等级出不同配色与装饰）
   function generatePetSvg(key) {
     // 物种配色
     const palette = {
       'cat': ['#f472b6', '#60a5fa'],
-      'dog': ['#f59e0b', '#f97316'],
-      'dragon': ['#10b981', '#22d3ee'],
+      'fish': ['#22d3ee', '#06b6d4'],
+      'bird': ['#fbbf24', '#f59e0b'],
+      'fox': ['#f97316', '#ea580c'],
       'pet': ['#60a5fa', '#34d399'],
       '默认': ['#60a5fa', '#34d399']
     };
@@ -150,13 +216,25 @@
   const STORAGE_KEY = 'oc-pet-system/v1';
   const DEFAULT_STATE = { pets: [], selectedPetId: null };
 
-  // 三只固定宠物的初始定义，id写死
-  const FIXED_PETS = [
-    { id: 'pet-001', name: '可可', species: '猫' },
-    { id: 'pet-002', name: '旺财', species: '狗' },
-    { id: 'pet-003', name: '小青', species: '龙' },
-    { id: 'pet-004', name: '阿狸', species: '狐狸' }
+  // 四只固定宝宝的初始定义，id写死
+  const ALL_PETS = [
+    { id: 'pal-001', name: '可可', species: '猫猫' },
+    { id: 'pal-002', name: '小鱼', species: '鱼鱼' },
+    { id: 'pal-003', name: '小白', species: '白鸟' },
+    { id: 'pal-004', name: '玖玖', species: '狐狸' }
   ];
+
+  // 口令配置
+  const PASSWORDS = {
+    '1234': [0, 1],      // 口令1：猫猫和小鱼
+    '5678': [0, 2],      // 口令2：猫猫和白鸟  
+    '9999': [0, 3],      // 口令3：猫猫和狐狸
+    '0000': [0, 1, 2, 3] // 口令4：全部宝宝
+  };
+
+
+
+  let currentPets = []; // 当前显示的宝宝列表
 
   function loadState() {
     try {
@@ -164,7 +242,18 @@
       if (!raw) return { ...DEFAULT_STATE };
       const data = JSON.parse(raw);
       if (!data || !Array.isArray(data.pets)) return { ...DEFAULT_STATE };
-      return { pets: data.pets, selectedPetId: data.selectedPetId ?? null };
+      // 迁移：将旧的 pet- 前缀统一迁移为 pal-
+      const migratedPets = data.pets.map((p) => {
+        if (typeof p.id === 'string' && /^pet-/.test(p.id)) {
+          return { ...p, id: `pal-${p.id.slice(4)}` };
+        }
+        return p;
+      });
+      let migratedSelected = data.selectedPetId ?? null;
+      if (typeof migratedSelected === 'string' && /^pet-/.test(migratedSelected)) {
+        migratedSelected = `pal-${migratedSelected.slice(4)}`;
+      }
+      return { pets: migratedPets, selectedPetId: migratedSelected };
     } catch {
       return { ...DEFAULT_STATE };
     }
@@ -274,18 +363,25 @@
   const cleanBtn = $('#clean-btn');
   const renameBtn = $('#rename-btn');
   const actionsPanel = document.querySelector('.pet-stage .actions-panel');
-  // 不允许释放固定宠物
+  // 不允许释放固定宝宝
 
   // 移除创建对话框相关节点引用
 
   // ---------- State ----------
   let state = loadState();
-  let petListExpanded = false; // 新增：宠物列表展开状态
+  let petListExpanded = false; // 新增：宝宝列表展开状态
 
-  // 保证四只固定宠物存在（ID固定，名称/种族/时期可编辑不影响ID和外观）
+  // 保证固定宝宝存在（ID固定，名称/种族/时期可编辑不影响ID和外观）
   function ensureFixedPets(stateIn) {
+    console.log('ensureFixedPets 被调用，currentPets:', currentPets);
+    
+    if (currentPets.length === 0) {
+      console.log('currentPets 为空，返回空状态');
+      return { pets: [], selectedPetId: null };
+    }
+    
     const existingById = new Map((stateIn.pets || []).map((p) => [p.id, p]));
-    const pets = FIXED_PETS.map((tpl) => {
+    const pets = currentPets.map((tpl) => {
       const src = existingById.get(tpl.id) || {};
       return {
         id: tpl.id,
@@ -300,21 +396,61 @@
         lastUpdated: typeof src.lastUpdated === 'number' ? src.lastUpdated : nowMs(),
       };
     });
-    const selectedPetId = FIXED_PETS.some((p) => p.id === stateIn.selectedPetId) ? stateIn.selectedPetId : pets[0].id;
+    
+    console.log('生成的宝宝数据:', pets);
+    
+    const selectedPetId = currentPets.some((p) => p.id === stateIn.selectedPetId) ? stateIn.selectedPetId : (pets.length > 0 ? pets[0].id : null);
     return { pets, selectedPetId };
   }
 
-  // 固定四只并追帧
-  state = ensureFixedPets(state);
-  state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
-  saveState(state);
+  // 迁移：将历史 pet- 前缀 ID 平滑迁移为 pal- 前缀
+  function migratePetIdsToPal(stateIn) {
+    const migrated = (stateIn.pets || []).map((p) => {
+      if (typeof p.id === 'string' && /^pet-\d+/.test(p.id)) {
+        return { ...p, id: 'pal-' + p.id.slice(4) };
+      }
+      return p;
+    });
+    let selected = stateIn.selectedPetId;
+    if (typeof selected === 'string' && /^pet-\d+/.test(selected)) {
+      selected = 'pal-' + selected.slice(4);
+    }
+    return { pets: migrated, selectedPetId: selected };
+  }
 
-  // 自动修复历史数据：加载时为每只宠物补 id
+  // 初始化：检查是否已经输入过口令
+  const savedPassword = localStorage.getItem('oc-pet-password');
+  if (savedPassword && PASSWORDS[savedPassword]) {
+    // 如果已经输入过口令，直接进入系统
+    console.log('检测到已保存的口令:', savedPassword);
+    const petIndices = PASSWORDS[savedPassword];
+    currentPets = petIndices.map(index => ALL_PETS[index]);
+    state = migratePetIdsToPal(state);
+    state = ensureFixedPets(state);
+    state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
+    saveState(state);
+    
+    // 直接显示主界面
+    document.getElementById('password-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'grid';
+    
+    // 渲染界面
+    render();
+  } else {
+    // 第一次进入，等待口令输入
+    currentPets = [];
+    state = migratePetIdsToPal(state);
+    state = ensureFixedPets(state);
+    state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
+    saveState(state);
+  }
+
+  // 自动修复历史数据：加载时为每只宝宝补 id
   state.pets = state.pets.map((pet, idx) => {
     if (!pet.id) {
       pet.id = uid();
       // 控制台提示
-      console.warn('宠物缺少id，已自动生成。请将原有资源文件重命名为：', pet.id);
+      console.warn('宝宝缺少id，已自动生成。请将原有资源文件重命名为：', pet.id);
     }
     return pet;
   });
@@ -322,21 +458,38 @@
 
   // ---------- Rendering ----------
   function render() {
+    console.log('开始渲染，当前状态:', state);
+    console.log('emptyStateEl:', emptyStateEl);
+    console.log('detailEl:', detailEl);
+    console.log('detailEl的hidden类:', detailEl?.classList.contains('hidden'));
+    
     renderPetList();
     if (!state.selectedPetId) {
+      console.log('没有选中的宝宝，显示空状态');
       emptyStateEl.classList.remove('hidden');
       detailEl.classList.add('hidden');
       return;
     }
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     if (!pet) {
+      console.log('找不到选中的宝宝，重置选择');
       state.selectedPetId = null;
       saveState(state);
       render();
       return;
     }
+    console.log('渲染宝宝详情:', pet);
     emptyStateEl.classList.add('hidden');
     detailEl.classList.remove('hidden');
+    console.log('移除hidden类后，detailEl的hidden类:', detailEl?.classList.contains('hidden'));
+    
+    // 测试：强制显示元素
+    if (detailEl) {
+      detailEl.style.display = 'block';
+      detailEl.style.visibility = 'visible';
+      console.log('强制设置detailEl为可见');
+    }
+    
     renderPetDetail(pet);
   }
 
@@ -346,11 +499,11 @@
     // 清空现有内容
     listEl.innerHTML = '';
     
-    // 创建宠物列表
+    // 创建宝宝列表
     const petListUl = document.createElement('ul');
     petListUl.className = 'pet-sub-list';
 
-    // 固定三只，列表必然有内容
+    // 显示当前口令对应的宝宝
     state.pets.forEach((pet) => {
       const li = document.createElement('li');
       li.className = 'pet-item' + (pet.id === state.selectedPetId ? ' active' : '');
@@ -430,9 +583,26 @@
   function renderPetDetail(pet) {
     nameEl.textContent = pet.name;
     speciesEl.textContent = pet.species;
-    levelEl.textContent = pet.stage && pet.stage.trim() ? pet.stage : '';
-    // 仅在进入/切换宠物时加载媒体，避免行动时闪烁
-    loadPetMedia(pet);
+    // 若无时期则隐藏 pill，避免出现空内容的小粉条
+    const hasStage = Boolean(pet.stage && pet.stage.trim());
+    levelEl.textContent = hasStage ? pet.stage : '';
+    if (hasStage) {
+      levelEl.classList.remove('hidden');
+      levelEl.style.display = '';
+    } else {
+      levelEl.classList.add('hidden');
+      levelEl.style.display = 'none';
+    }
+    // 顶部头像：使用物种对应的emoji
+    if (avatarEl) {
+      avatarEl.textContent = speciesToEmoji(pet.species);
+      avatarEl.title = pet.species;
+    }
+    // 仅在进入/切换宝宝时加载媒体，避免行动时闪烁
+    if (!state.lastLoadedPetId || state.lastLoadedPetId !== pet.id) {
+      loadPetMedia(pet);
+      state.lastLoadedPetId = pet.id;
+    }
     updateStatsUI(pet);
   }
 
@@ -496,7 +666,7 @@
         setTimeout(() => {
           const b = document.createElement('div');
           b.className = 'bubble-fx';
-          b.textContent = '🫧';
+          b.textContent = '✼';
           stage.appendChild(b);
           b.addEventListener('animationend', () => b.remove());
         }, i * 120);
@@ -508,6 +678,145 @@
       rainShower(kind);
     }
   }
+
+  // ---------- Idle breathe & Head-pat & Long-press soothe & Drag interactions ----------
+  (function enhanceInteractions() {
+    const stage = document.querySelector('.pet-stage');
+    const video = document.getElementById('pet-stage-video');
+    const img = document.getElementById('pet-stage-image');
+    const media = () => (video && video.style.display !== 'none') ? video : img;
+    let idleTimer = null;
+    let patCount = 0;
+    let pressTimer = null;
+    let isPressing = false;
+    let dragType = null; // 'feed' | 'clean' | null
+    let dragGhost = null;
+
+    function setIdle(on) {
+      const el = media();
+      if (!el) return;
+      el.classList.toggle('idle-breathe', Boolean(on));
+    }
+
+    function bumpHappinessSmall() {
+      updateSelected((pet) => ({
+        ...pet,
+        happiness: clamp(pet.happiness + 2, 0, 100),
+        xp: clamp(pet.xp + 1, 0, 999)
+      }));
+    }
+
+    function scheduleIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => setIdle(true), 3500);
+    }
+
+    // 启动：进入待机动画
+    scheduleIdle();
+    setIdle(true);
+
+    // 任何交互都取消待机一小段时间
+    ['mousemove','pointermove','touchmove','click','keydown'].forEach((evt) => {
+      document.addEventListener(evt, () => {
+        setIdle(false);
+        scheduleIdle();
+      }, { passive: true });
+    });
+
+    // 摸头：在媒体上方轻点/拖动顶部区域触发爱心粒子与微奖励
+    function isHeadArea(clientX, clientY) {
+      if (!stage) return false;
+      const rect = stage.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      return x >= 0 && x <= rect.width && y >= 0 && y <= rect.height * 0.35;
+    }
+
+    function headPatAt(clientX, clientY) {
+      if (!isHeadArea(clientX, clientY)) return;
+      patCount++;
+      burstAt(clientX, clientY);
+      if (patCount % 3 === 0) {
+        createBubbleAt(clientX - (stage?.getBoundingClientRect().left || 0), clientY - (stage?.getBoundingClientRect().top || 0) - 30);
+        bumpHappinessSmall();
+      }
+    }
+
+    stage && stage.addEventListener('pointerdown', (e) => {
+      isPressing = true;
+      clearTimeout(pressTimer);
+      const startX = e.clientX, startY = e.clientY;
+      // 长按安抚：800ms
+      pressTimer = setTimeout(() => {
+        if (!isPressing) return;
+        // 连续冒出安抚💗粒子
+        for (let i = 0; i < 6; i++) {
+          setTimeout(() => burstAt(startX, startY - i * 6), i * 120);
+        }
+        bumpHappinessSmall();
+      }, 800);
+    });
+
+    stage && stage.addEventListener('pointerup', () => {
+      isPressing = false;
+      clearTimeout(pressTimer);
+    });
+
+    stage && stage.addEventListener('pointermove', (e) => {
+      if (e.pressure > 0 || (e.buttons & 1)) {
+        // 拖动时若在头部，制造轻微粒子
+        if (isHeadArea(e.clientX, e.clientY) && Math.random() < 0.12) {
+          burstAt(e.clientX, e.clientY);
+        }
+      }
+    }, { passive: true });
+
+    // 简易拖拽喂食/清洁：从下方操作按钮按下并拖到舞台释放
+    const feedBtn = document.getElementById('feed-btn');
+    const cleanBtn = document.getElementById('clean-btn');
+
+    function beginDrag(type, startEvent) {
+      dragType = type;
+      if (!dragGhost) {
+        dragGhost = document.createElement('div');
+        dragGhost.className = 'drag-ghost';
+        dragGhost.textContent = type === 'feed' ? '🍖' : '🫧';
+        document.body.appendChild(dragGhost);
+      }
+      moveGhost(startEvent.clientX, startEvent.clientY);
+      document.addEventListener('pointermove', onDragMove, { passive: true });
+      document.addEventListener('pointerup', onDragEnd, { once: true });
+    }
+
+    function moveGhost(x, y) {
+      if (dragGhost) {
+        dragGhost.style.left = x + 'px';
+        dragGhost.style.top = y + 'px';
+      }
+    }
+
+    function onDragMove(e) {
+      moveGhost(e.clientX, e.clientY);
+    }
+
+    function onDragEnd(e) {
+      document.removeEventListener('pointermove', onDragMove);
+      if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+      const inside = (() => {
+        if (!stage) return false;
+        const r = stage.getBoundingClientRect();
+        return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      })();
+      if (inside && dragType) {
+        if (dragType === 'feed') { animatePet('feed'); updateSelected(ACTIONS.feed); }
+        else if (dragType === 'clean') { animatePet('clean'); updateSelected(ACTIONS.clean); }
+      }
+      dragType = null;
+    }
+
+    feedBtn && feedBtn.addEventListener('pointerdown', (e) => beginDrag('feed', e));
+    cleanBtn && cleanBtn.addEventListener('pointerdown', (e) => beginDrag('clean', e));
+  })();
 
   // ---------- Actions ----------
   function updateSelected(updater) {
@@ -539,7 +848,7 @@
   }
 
   feedBtn.addEventListener('click', () => { animatePet('feed'); updateSelected(ACTIONS.feed); });
-  // 打开/收起小游戏面板（浮动到宠物容器，顶部对齐容器中心线）+ 玩耍动画
+  // 打开/收起小游戏面板（浮动到宝宝容器，顶部对齐容器中心线）+ 玩耍动画
   playBtn.addEventListener('click', () => {
     animatePet('play');
     const panel = document.getElementById('play-panel');
@@ -575,7 +884,7 @@
       panel.style.width = '';
       const naturalWidth = panel.getBoundingClientRect().width;
 
-      // 作为浮动层显示在宠物容器位置：顶部对齐容器中心线，保持原宽度
+      // 作为浮动层显示在宝宝容器位置：顶部对齐容器中心线，保持原宽度
       const rect = stage.getBoundingClientRect();
       panel.classList.add('as-overlay');
       panel.style.position = 'fixed';
@@ -620,7 +929,7 @@
 
     // 预填
     nameInput.value = pet.name || '';
-    speciesInput.value = pet.species || '猫';
+    speciesInput.value = pet.species || '猫猫';
     stageInput.value = pet.stage || '';
 
     // 打开
@@ -672,174 +981,8 @@
     updateStatsUI(updated);
   }, 10_000); // 每10秒检查一次是否跨分钟
 
-  // ---------- PWA桌宠模式支持 ----------
-  let isDesktopPetMode = false;
-  let isDragging = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let petPositionX = 0;
-  let petPositionY = 0;
-
-  // 检测是否为PWA桌宠模式
-  function checkDesktopPetMode() {
-    isDesktopPetMode = window.matchMedia('(display-mode: standalone)').matches;
-    if (isDesktopPetMode) {
-      console.log('桌宠模式已启用');
-      initDesktopPetMode();
-    }
-  }
-
-  // 初始化桌宠模式
-  function initDesktopPetMode() {
-    const petStage = document.querySelector('.pet-stage');
-    if (!petStage) return;
-
-    // 从本地存储加载宠物位置
-    const savedPosition = localStorage.getItem('pet-position');
-    if (savedPosition) {
-      const pos = JSON.parse(savedPosition);
-      petPositionX = pos.x;
-      petPositionY = pos.y;
-      updatePetPosition();
-    }
-
-    // 添加拖拽事件监听
-    petStage.addEventListener('mousedown', startDrag);
-    petStage.addEventListener('touchstart', startDrag, { passive: false });
-    document.addEventListener('mousemove', onDrag);
-    document.addEventListener('touchmove', onDrag, { passive: false });
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchend', endDrag);
-  }
-
-  // 开始拖拽
-  function startDrag(e) {
-    if (!isDesktopPetMode) return;
-    
-    isDragging = true;
-    const rect = e.target.getBoundingClientRect();
-    
-    if (e.type === 'mousedown') {
-      dragStartX = e.clientX - rect.left;
-      dragStartY = e.clientY - rect.top;
-    } else if (e.type === 'touchstart') {
-      e.preventDefault();
-      dragStartX = e.touches[0].clientX - rect.left;
-      dragStartY = e.touches[0].clientY - rect.top;
-    }
-  }
-
-  // 拖拽中
-  function onDrag(e) {
-    if (!isDesktopPetMode || !isDragging) return;
-    
-    e.preventDefault();
-    
-    let clientX, clientY;
-    if (e.type === 'mousemove') {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    } else if (e.type === 'touchmove') {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    }
-
-    const petStage = document.querySelector('.pet-stage');
-    if (!petStage) return;
-
-    const stageRect = petStage.getBoundingClientRect();
-    const stageWidth = stageRect.width;
-    const stageHeight = stageRect.height;
-    
-    // 计算新位置，确保不超出屏幕边界
-    const newX = Math.max(0, Math.min(window.innerWidth - stageWidth, clientX - dragStartX));
-    const newY = Math.max(0, Math.min(window.innerHeight - stageHeight, clientY - dragStartY));
-    
-    petPositionX = newX;
-    petPositionY = newY;
-    
-    updatePetPosition();
-  }
-
-  // 结束拖拽
-  function endDrag() {
-    if (!isDesktopPetMode) return;
-    
-    isDragging = false;
-    
-    // 保存位置到本地存储
-    localStorage.setItem('pet-position', JSON.stringify({
-      x: petPositionX,
-      y: petPositionY
-    }));
-  }
-
-  // 更新宠物位置
-  function updatePetPosition() {
-    const petStage = document.querySelector('.pet-stage');
-    if (!petStage) return;
-    
-    petStage.style.transform = `translate(${petPositionX}px, ${petPositionY}px)`;
-  }
-
-  // 检测PWA模式变化
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', checkDesktopPetMode);
-
-  // ---------- PWA安装提示 ----------
-  let deferredPrompt;
-
-  // 监听beforeinstallprompt事件
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    
-    // 显示安装提示
-    setTimeout(() => {
-      showInstallPrompt();
-    }, 3000); // 3秒后显示
-  });
-
-  // 显示安装提示
-  function showInstallPrompt() {
-    if (isDesktopPetMode) return; // 已经是桌宠模式则不显示
-    
-    const prompt = document.getElementById('pwa-install-prompt');
-    if (prompt) {
-      prompt.style.display = 'flex';
-    }
-  }
-
-  // 安装PWA
-  function installPWA() {
-    if (!deferredPrompt) return;
-    
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('用户接受了PWA安装');
-      } else {
-        console.log('用户拒绝了PWA安装');
-      }
-      deferredPrompt = null;
-      hideInstallPrompt();
-    });
-  }
-
-  // 隐藏安装提示
-  function hideInstallPrompt() {
-    const prompt = document.getElementById('pwa-install-prompt');
-    if (prompt) {
-      prompt.style.display = 'none';
-    }
-  }
-
-  // 绑定安装提示按钮事件
-  document.getElementById('pwa-install-btn')?.addEventListener('click', installPWA);
-  document.getElementById('pwa-dismiss-btn')?.addEventListener('click', hideInstallPrompt);
-
   // ---------- Initial Render ----------
   render();
-  checkDesktopPetMode();
 
   // ---------- Mini Games (Play) ----------
   const playInlineClose = document.getElementById('play-inline-close');
@@ -1036,28 +1179,32 @@
     j && (j.textContent = JOKES[jokeIndex]);
   });
 
-  // 海龟汤（简化为故事+提示+答案）
+  // 海龟汤（故事+提示+答案）- 加强趣味与推理深度
   const SOUPS = [
-    { s: '一个人走进餐厅点了海龟汤，喝完后哭了。为什么？', h: '与过去经历相关', a: '他曾在海难中被救起，后来发现当时并不是海龟汤。' },
-    { s: '深夜路口红灯亮着，没有车也没有人，一个人却一直不过。为什么？', h: '职业相关', a: '他是交警，正在值守。' },
-    { s: '一个人看完一条短信后立刻松了口气。为什么？', h: '等待的结果来了', a: '医院短信告知手术成功。' },
-    { s: '一个人半夜打电话给陌生人，说了声谢谢就挂了。为什么？', h: '确认了某件事', a: '拨错电话却确认了对方平安。' },
-    { s: '男人进门看到桌上鲜花，转身离开家。为什么？', h: '不是送给他的', a: '花是妻子送给外卖小哥的感谢，男人误会了。' },
-    { s: '一位司机到家后把方向盘带走了。为什么？', h: '避免被偷', a: '老旧车，方向盘可拆卸防盗。' },
-    { s: '小孩每次考试都只拿第二名。为什么？', h: '与人有关', a: '父母名字分别叫一名和三名。' },
-    { s: '她在婚礼前一晚剪坏了婚纱，却笑了。为什么？', h: '摆脱了某件事', a: '被迫婚约，借机取消婚礼。' },
-    { s: '他每天都去海边捡瓶子。为什么？', h: '寻找线索', a: '在找遇难亲人的求救信息。' },
-    { s: '他收到了一个空盒子，却异常开心。为什么？', h: '象征意义', a: '空盒子代表"重启"，是朋友的鼓励。' },
-    { s: '她把戒指扔进湖里，第二天却戴上了。为什么？', h: '有人帮忙', a: '潜水员朋友帮她找回并劝和。' },
-    { s: '他给自己寄了一封没有地址的信。为什么？', h: '测试', a: '测试邮局是否会退回，证明地址无效。' },
-    { s: '他搬家后第一件事是敲门拜访邻居。为什么？', h: '确认安全', a: '确认火灾逃生通道和邻里支援。' },
-    { s: '她每天睡前都把鞋子翻过来。为什么？', h: '心理暗示', a: '象征把不顺心倒出去。' },
-    { s: '他把手机关机放进冰箱。为什么？', h: '冷却或隔绝', a: '被骚扰，暂时隔绝信号和降温。' },
-    { s: '她拿着伞却被淋湿。为什么？', h: '风', a: '大风把雨吹到侧面，伞挡不住。' },
-    { s: '老人每天清晨擦拭门牌。为什么？', h: '在等人', a: '怕邮差找不到门，等孙儿来信。' },
-    { s: '他在电梯里对着镜头鞠躬。为什么？', h: '礼貌', a: '楼管监控前致意，感谢帮助。' },
-    { s: '她每次看书都先翻到最后一页。为什么？', h: '确认结局', a: '焦虑，先读结局减轻焦虑。' },
-    { s: '男子半夜常起床写字条。为什么？', h: '怕忘', a: '记录梦中灵感。' }
+    { s: '一个人推着小车走到“酒店”门口，被老板罚了钱，却开心地继续前进。为什么？', h: '不是现实中的酒店', a: '桌游《大富翁/Monopoly》，走到宾馆格子需要交费。' },
+    { s: '大雨天，一位行人没打伞，衣服被淋湿，但头发却一点没湿。为什么？', h: '与发型有关', a: '他是光头。' },
+    { s: '女孩每晚都把“太阳”关掉再睡觉。为什么？', h: '不是天上的太阳', a: '她把房间里名为“太阳”的小夜灯关掉。' },
+    { s: '他每天都“飞”去上班，却从不坐飞机。为什么？', h: '字面“双关”', a: '他骑共享单车，车名叫“飞什么”的品牌/或地铁“飞站”（跳停）线路。' },
+    { s: '一栋楼的电梯总显示“下行”，住户却从没抱怨。为什么？', h: '位置相关', a: '这是山顶观景电梯，只有下行开放供游客回到山脚。' },
+    { s: '作家完成新书后第一件事是把书“淹了”。为什么？', h: '物理意义改变', a: '把书交给出版社的“版面海（版海）”，或把U盘放进“云端（谐音云/淹）”备份。' },
+    { s: '她在雨中举着一把没有伞柄的伞，却没有被淋湿。为什么？', h: '伞不是伞', a: '她打的是阳伞/遮阳棚边上的伞布，或在公交站的伞形顶棚下。' },
+    { s: '画家把“夜”画得很亮。为什么？', h: '工具或环境', a: '他用的是夜光颜料/或在白天画夜景。' },
+    { s: '男子路过照相馆时突然快走，进门后却慢了下来。为什么？', h: '“快”“慢”不是速度', a: '他把相机的快门速度从“快门”调成“慢门”。' },
+    { s: '她买下一张“时间”，把它贴在冰箱上。为什么？', h: '不是抽象时间', a: '买的是“日程表/日历”，贴冰箱上提醒安排。' },
+    { s: '老师让全班把“错误”写在纸上，结果大家都对了。为什么？', h: '字面游戏', a: '让大家写下“错误”两个字，写对了就对。' },
+    { s: '他把手机调到“飞行模式”，却让朋友顺利到达。为什么？', h: '不是手机的飞行', a: '他把无人机的遥控调到飞行模式，帮朋友空投物品/指路。' },
+    { s: '建筑师在图纸上“开了一扇窗”，房间立刻亮了。为什么？', h: '现场与图纸联动', a: '这是智能建模/灯光联动的展示厅，图纸上的操作同步控制样板间灯光。' },
+    { s: '每天清晨，他都在同一地点看“日落”。为什么？', h: '方位错觉', a: '他面对的是玻璃幕墙，看到的“日落”是对面大屏或反射的日落视频。' },
+    { s: '她把一张纸对折十次，成功“到达月球”。为什么？', h: '不是物理对折', a: '她在玩科普计算题：理论上对折到一定次数厚度可达月球；或她打开了AR科普APP的“到月球”成就。' },
+    { s: '球迷比赛当天“看台上没有一个人”，但座位却坐满了。为什么？', h: '措辞陷阱', a: '没有“一个人”，因为都是两个人、三个人……看台并非空无一人。' },
+    { s: '他把“声音”装进了瓶子里。为什么？', h: '并非真的装进', a: '他在做ASMR/录音，用瓶子作为共鸣腔录制音效。' },
+    { s: '一位厨师把盐放到甜点里，客人却说更甜了。为什么？', h: '味觉原理', a: '少量盐可以抑制苦味，突出甜味。' },
+    { s: '她买了一张没有座位号的票，却坐到了第一排。为什么？', h: '票的类型', a: '买的是展览/音乐节草地票，早到先到先得坐在最前。' },
+    { s: '他给植物听“无声”的音乐，长得更好了。为什么？', h: '音乐并非一定要有声', a: '他用的是震动/超声频段或节律性灌溉定时器。' },
+    { s: '邮差每天把信送到同一扇门，但门从没开过。为什么？', h: '门的位置', a: '那是信箱门/信报箱。' },
+    { s: '她把书翻到最后一页，合上，又从第一页开始读。为什么？', h: '不是偷看结局', a: '在检查是否缺页/确认印刷分页完整后才开始阅读。' },
+    { s: '他给朋友发了一个空白消息，朋友却立刻明白了意思。为什么？', h: '约定俗成', a: '他们约定“空白”代表平安/到家。' },
+    { s: '夜里停电，他把“星星”点亮了。为什么？', h: '星星不在天上', a: '家里的星星投影灯/夜光贴被点亮。' }
   ];
   let soupIndex = 0;
   function initSoup() {
@@ -1197,7 +1344,7 @@
     if (!within) petPickerDropdown.classList.add('hidden');
   });
 
-  // 关闭移动端宠物列表
+  // 关闭移动端宝宝列表
   closeMobilePetBtn && closeMobilePetBtn.addEventListener('click', () => {
     mobilePetOverlay.classList.remove('active');
     setTimeout(() => {
@@ -1243,7 +1390,7 @@
 
 
 
-  // 同步移动端宠物列表
+  // 同步移动端宝宝列表
   function syncMobilePetList() {
     const mobilePetList = document.getElementById('mobile-pet-list');
     if (!mobilePetList) return;
@@ -1394,7 +1541,7 @@
       } else if (kind === 'feed') {
         setTimeout(() => createParticle(x, y, { mode: 'rain', emoji: '🍖' }), delay);
       } else {
-        const bubbles = ['🫧', '⚪', '🔵', '◌', '◯'];
+        const bubbles = [ '⚪', '🔵', '◌', '◯'];
         const emoji = bubbles[Math.floor(Math.random() * bubbles.length)];
         setTimeout(() => createParticle(x, y, { mode: 'rain', emoji }), delay);
       }
@@ -1402,8 +1549,11 @@
   }
 
   const TALK_TEXTS = [
-    '好耶！', '给我摸摸', '一起玩～', '汪！', '喵～', '耶耶耶',
-    '困了…', '好饿…', '我最棒！', '继续！', '今天也要元气满满！'
+    '好耶！', '摸摸我', '一起玩～', '汪！', '喵～', '耶耶耶',
+    '困了…', '好饿…', '我最棒！', '继续！', '今天也要元气满满！',
+    '给你小心心💖', '抱抱～', '最喜欢你啦！', '一起冒险！', '冲鸭！',
+    '嘿嘿～', '比心✌️', '开开心心！', '摸摸头～', '今天也要可爱！',
+    '汪汪！', '喵喵～', 'biu~', '呀呼！', '晚安喵～', '早安汪！'
   ];
 
   function createBubbleAt(x, y) {
@@ -1504,12 +1654,126 @@
           'hard-light': '强光', 'soft-light': '柔光', 'difference': '差值', 'exclusion': '排除',
           'hue': '色相', 'saturation': '饱和度', 'color': '颜色', 'luminosity': '亮度', 'plus-lighter': '叠加亮化'
         };
-        videoBgBtn.title = `背景处理: ${modeNames[newMode]}`;
+        videoBgBtn.title = `光影处理: ${modeNames[newMode]}`;
       });
     }
   }
 
   // 初始化媒体背景控制（页面加载时）
   initMediaBgControls();
+
+  // ---------- 口令系统 ----------
+  const passwordScreen = document.getElementById('password-screen');
+  const passwordInput = document.getElementById('password-input');
+  const passwordSubmit = document.getElementById('password-submit');
+  const appContainer = document.getElementById('app');
+
+  // 口令验证函数
+  function validatePassword(password) {
+    console.log('验证口令:', password);
+    console.log('可用口令:', Object.keys(PASSWORDS));
+    
+    const petIndices = PASSWORDS[password];
+    if (petIndices) {
+      console.log('口令正确，宝宝索引:', petIndices);
+      currentPets = petIndices.map(index => ALL_PETS[index]);
+      console.log('设置的当前宝宝:', currentPets);
+      return true;
+    }
+    
+    console.log('口令错误');
+    return false;
+  }
+
+  // 进入系统
+  function enterSystem() {
+    if (currentPets.length === 0) return;
+    
+    console.log('进入系统，当前宝宝:', currentPets);
+    
+    // 保存当前使用的口令到localStorage
+    const currentPassword = passwordInput.value.trim();
+    localStorage.setItem('oc-pet-password', currentPassword);
+    console.log('口令已保存到localStorage:', currentPassword);
+    
+    // 隐藏口令界面
+    passwordScreen.style.display = 'none';
+    
+    // 显示主应用
+    appContainer.style.display = 'grid';
+    
+    // 重新初始化宝宝数据
+    state = ensureFixedPets(state);
+    state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
+    saveState(state);
+    
+    console.log('初始化后的状态:', state);
+    
+    // 确保有选中的宝宝
+    if (!state.selectedPetId && state.pets.length > 0) {
+      state.selectedPetId = state.pets[0].id;
+      saveState(state);
+    }
+    
+    // 渲染界面
+    render();
+  }
+
+  // 口令输入事件
+  passwordSubmit.addEventListener('click', () => {
+    const password = passwordInput.value.trim();
+    if (validatePassword(password)) {
+      // 添加加载效果
+      passwordSubmit.classList.add('loading');
+      passwordSubmit.textContent = '进入中...';
+      
+      // 短暂延迟后进入系统
+      setTimeout(() => {
+        enterSystem();
+      }, 800);
+    } else {
+      // 错误提示
+      passwordSubmit.textContent = '口令错误';
+      passwordSubmit.style.background = 'var(--danger)';
+      
+      setTimeout(() => {
+        passwordSubmit.textContent = '进入小窝';
+        passwordSubmit.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-strong))';
+      }, 1500);
+      
+      passwordInput.value = '';
+      passwordInput.focus();
+    }
+  });
+
+  // 回车键提交
+  passwordInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      passwordSubmit.click();
+    }
+  });
+
+  // 输入框焦点效果
+  passwordInput.addEventListener('focus', () => {
+    passwordInput.style.transform = 'scale(1.02)';
+  });
+
+  passwordInput.addEventListener('blur', () => {
+    passwordInput.style.transform = 'scale(1)';
+  });
+
+  // 页面加载时聚焦到口令输入框
+  passwordInput.focus();
+
+  // 重新选择口令功能
+  const changePasswordBtn = document.getElementById('change-password-btn');
+  if (changePasswordBtn) {
+    changePasswordBtn.addEventListener('click', () => {
+      // 清除保存的口令
+      localStorage.removeItem('oc-pet-password');
+      // 重新加载页面
+      location.reload();
+    });
+  }
 })();
 

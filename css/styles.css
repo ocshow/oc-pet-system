@@ -1,5 +1,113 @@
 :root {
-  /* 柔和马卡龙配色 */
+  /* 口令输入界面样式 */
+.password-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(1200px 800px at 20% -20%, rgba(255, 183, 220, 0.28), transparent),
+    radial-gradient(1000px 700px at 120% 10%, rgba(165, 216, 255, 0.35), transparent),
+    var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.password-container {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), inset -1px 0 0 rgba(0,0,0,0.06);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+  border: 2px dashed rgba(255, 134, 178, 0.35);
+}
+
+.password-header h1 {
+  color: var(--text);
+  margin-bottom: 30px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, var(--primary-strong), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.password-form {
+  margin-bottom: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.password-form input {
+  width: 100%;
+  padding: 15px 18px;
+  border: 2px dashed rgba(255, 134, 178, 0.35);
+  border-radius: 14px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  background: #fff;
+  font-family: inherit;
+}
+
+.password-form input:focus {
+  outline: none;
+  border-color: var(--primary-strong);
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.password-form button {
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 18px rgba(255, 134, 178, 0.35);
+  font-family: inherit;
+}
+
+.password-form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 134, 178, 0.45);
+}
+
+.password-form button:active {
+  transform: translateY(0);
+}
+
+.password-form button.loading {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+
+/* 加载动画 */
+.password-form button.loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+
+
+.hidden {
+  display: none;
+}
+
+/* 柔和马卡龙配色 */
   --bg: #fff7fb;
   --panel: #ffffff;
   --panel-2: #fff0f7;
@@ -137,7 +245,7 @@ body {
 .pet-detail.hidden,
 .hidden { display: none; }
 
-/* 宠物头部新布局 */
+/* 宝宝头部新布局 */
 .pet-header {
   display: flex;
   justify-content: space-between;
@@ -168,12 +276,63 @@ body {
   flex: 1;
 }
 
+/* 顶部可爱信息卡片容器 */
+.pet-identity-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(255, 134, 178, 0.12);
+  width: 100%;
+}
+
+.pet-identity-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+.pet-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-content: center;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(255, 134, 178, 0.25);
+  font-size: 28px;
+}
+
+.pet-meta { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; min-width: 0; }
+.pet-meta-main { display: flex; align-items: center; gap: 10px; }
+.pet-meta-sub { display: flex; align-items: center; gap: 8px; }
+
+/* 让顶部容器与下方容器同宽、自适应 */
+.pet-overview { width: 100%; }
+.pet-info-left { width: 100%; }
+.pet-header { width: 100%; }
+
+/* 固定右侧动作区域位置，按钮紧贴排列 */
+.pet-identity-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 紧贴但不重叠 */
+  flex-shrink: 0;
+}
+
+/* 右对齐的下拉列表 */
+.pet-identity-actions .pet-picker { position: relative; }
+.pet-identity-actions .pet-picker-dropdown {
+  left: auto;
+  right: 0;
+}
+
 /* 让重命名按钮贴右对齐 */
 .pet-info-row > #rename-btn {
   margin-left: auto;
 }
 
-/* 萌系下拉宠物选择器 */
+/* 萌系下拉宝宝选择器 */
 .pet-picker { position: relative; }
 .pet-picker-dropdown {
   position: absolute;
@@ -217,6 +376,9 @@ body {
   font-weight: 800;
   color: var(--text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: clamp(120px, 28vw, 320px);
 }
 
 .pill {
@@ -254,8 +416,8 @@ body {
 
 /* 小游戏面板移动到状态面板顶部 */
 .play-panel {
-  margin-bottom: 20px;
-  padding-bottom: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   border-bottom: 2px dashed rgba(255, 134, 178, 0.2);
 }
 
@@ -339,7 +501,7 @@ body {
   gap: 4px;
 }
 
-/* 左侧宠物展示区 */
+/* 左侧宝宝展示区 */
 .pet-stage {
   margin-top: 0;
   height: min(60vh, 480px);
@@ -357,7 +519,7 @@ body {
   box-shadow: 0 20px 40px rgba(255, 134, 178, 0.15);
 }
 
-/* 新增：宠物容器下方的横向操作栏 */
+/* 新增：宝宝容器下方的横向操作栏 */
 .actions-bar {
   display: flex;
   align-items: center;
@@ -426,6 +588,16 @@ body {
   filter: drop-shadow(0 18px 40px rgba(255, 134, 178, 0.35));
 }
 
+/* 待机：轻微呼吸起伏（不依赖素材） */
+#pet-stage-video.idle-breathe,
+#pet-stage-image.idle-breathe {
+  animation: idle-breathe 3.2s ease-in-out infinite;
+}
+@keyframes idle-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(4px) scale(1.02); }
+}
+
 /* 视频特定样式 */
 #pet-stage-video {
   background: transparent;
@@ -437,7 +609,7 @@ body {
 
 /* 视频加载时的样式 */
 #pet-stage-video:not([src]) {
-  display: none;
+  /* 移除这个规则，让JavaScript控制显示/隐藏 */
 }
 
 /* 视频播放控制 */
@@ -457,7 +629,7 @@ body {
   display: none;
 }
 
-/* 宠物媒体容器 */
+/* 宝宝媒体容器 */
 .pet-media-container {
   position: relative;
   width: 100%;
@@ -657,6 +829,15 @@ body {
   justify-content: center;
 }
 
+/* 紧凑模式：去除底部空白并自适应高度 */
+.pet-status-panel--slim {
+  height: auto;
+  justify-content: flex-start;
+  padding-bottom: 12px;
+}
+
+.pet-status-panel--slim .stats-container { margin-bottom: 0; }
+
 /* 顶部彩色条 */
 .pet-status-panel::before {
   content: '';
@@ -770,7 +951,7 @@ body {
   display: flex;
   flex-direction: row;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 0; /* 减少底部间距为 0，消除空白 */
   position: relative;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -1075,6 +1256,18 @@ body {
   animation: var(--anim, float-up) var(--dur, 1.2s) ease-out forwards;
 }
 
+/* 拖拽操作时的跟随表情（如🍖/🫧） */
+.drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 5000;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  filter: drop-shadow(0 6px 14px rgba(255, 134, 178, 0.4));
+}
+
 @keyframes float-up {
   0% { transform: translate(var(--x, 0), var(--y, 0)) scale(0.7) rotate(0deg); opacity: 0; }
   10% { opacity: 1; }
@@ -1109,12 +1302,12 @@ body {
 /* 文字泡泡对话框 */
 .bubble {
   position: absolute;
-  max-width: min(60ch, 70%);
-  padding: 8px 12px;
-  border-radius: 14px;
+  max-width: min(64ch, 76%);
+  padding: 10px 14px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.92);
   color: #0b1020;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.3;
   box-shadow: 0 10px 24px rgba(0,0,0,0.35);
   transform: translate(-50%, -100%);
@@ -1127,13 +1320,13 @@ body {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -8px;
+  bottom: -9px;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid rgba(255,255,255,0.92);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 9px solid rgba(255,255,255,0.92);
 }
 
 @keyframes bubble-rise {
@@ -1212,7 +1405,27 @@ body {
 .game-question { background: rgba(255,255,255,0.06); border: 1px dashed rgba(255,134,178,0.25); padding: 12px; border-radius: 12px; line-height: 1.6; }
 .game-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .game-secondary-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.game-input { flex: 1; min-width: 160px; background: rgba(2, 6, 23, 0.35); border: 1px solid rgba(148, 163, 184, 0.22); color: var(--text); padding: 10px 12px; border-radius: 12px; }
+.game-input {
+  flex: 1;
+  min-width: 160px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(255, 134, 178, 0.08);
+}
+
+.game-input::placeholder {
+  color: #c08aa5;
+  opacity: 0.8;
+}
+
+.game-input:focus {
+  outline: none;
+  border-color: rgba(255, 134, 178, 0.5);
+  box-shadow: 0 8px 18px rgba(255, 134, 178, 0.16);
+}
 .game-feedback { min-height: 20px; color: #ffb8d2; font-weight: 600; }
 
 /* 内嵌小游戏面板 */
@@ -1306,7 +1519,7 @@ body {
     overflow-x: auto;
   }
 
-  /* 操作面板（放在宠物容器下方后的布局微调） */
+  /* 操作面板（放在宝宝容器下方后的布局微调） */
   .actions-panel {
     margin-top: 16px;
   }
@@ -1470,7 +1683,7 @@ body {
   font-size: 14px;
 }
 
-/* 移动端宠物列表弹出层 */
+/* 移动端宝宝列表弹出层 */
 .mobile-pet-overlay {
   display: none;
   position: fixed;
@@ -1652,7 +1865,7 @@ body {
   animation: touch-ripple 0.6s ease-out;
 }
 
-/* 新增：宠物列表展开/收起功能样式 */
+/* 新增：宝宝列表展开/收起功能样式 */
 .brand-toggle {
   display: flex;
   align-items: center;
@@ -1712,7 +1925,7 @@ body {
   z-index: 5;
 }
 
-/* 浮动宠物列表容器 */
+/* 浮动宝宝列表容器 */
 .floating-pet-list {
   position: absolute;
   top: 100%;
@@ -1741,7 +1954,7 @@ body {
   transform: translateY(0);
 }
 
-/* 宠物列表基本样式 */
+/* 宝宝列表基本样式 */
 .pet-list {
   list-style: none;
   padding: 0;
@@ -1759,207 +1972,5 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-/* PWA桌宠模式样式 */
-@media (display-mode: standalone) {
-  body {
-    background: transparent !important;
-    overflow: hidden;
-  }
-  
-  .app {
-    background: transparent;
-    min-height: 100vh;
-  }
-  
-  /* 隐藏不必要的元素 */
-  .sidebar,
-  .mobile-menu-btn,
-  .footer {
-    display: none !important;
-  }
-  
-  /* 桌宠模式下的宠物展示 */
-  .pet-stage {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 200px;
-    height: 200px;
-    z-index: 1000;
-    cursor: move;
-    user-select: none;
-    touch-action: none;
-  }
-  
-  .pet-media-container {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(255, 134, 178, 0.3);
-  }
-  
-  #pet-stage-video,
-  #pet-stage-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  /* 桌宠模式下的状态显示 */
-  .pet-status-panel {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 120px;
-    height: auto;
-    max-height: 300px;
-    z-index: 1001;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 12px;
-    font-size: 12px;
-  }
-  
-  .pet-status-panel .stats-container {
-    gap: 8px;
-  }
-  
-  .stat-item {
-    padding: 6px;
-    border-radius: 8px;
-  }
-  
-  .stat-icon {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-  }
-  
-  .stat-label {
-    font-size: 10px;
-  }
-  
-  .stat-text {
-    font-size: 9px;
-  }
-  
-  /* 桌宠模式下的操作按钮 */
-  .actions-bar {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-  
-  .actions {
-    gap: 6px;
-  }
-  
-  .action-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-    border-radius: 12px;
-  }
-  
-  .action-emoji {
-    font-size: 14px;
-  }
-  
-  .action-text {
-    font-size: 10px;
-  }
-  
-  /* 隐藏主界面元素 */
-  .main {
-    display: none;
-  }
-  
-  /* 显示桌宠模式提示 */
-  .desktop-pet-mode {
-    display: block !important;
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    background: rgba(255, 134, 178, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    z-index: 1002;
-    animation: fadeInOut 3s ease-in-out;
-  }
-  
-  @keyframes fadeInOut {
-    0%, 100% { opacity: 0; }
-    20%, 80% { opacity: 1; }
-  }
-}
-
-/* PWA安装提示样式 */
-.pwa-install-prompt {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.pwa-install-content {
-  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
-  border-radius: 20px;
-  padding: 24px;
-  max-width: 320px;
-  width: 90%;
-  text-align: center;
-  box-shadow: 0 20px 40px rgba(255, 134, 178, 0.3);
-  border: 2px dashed rgba(255, 134, 178, 0.3);
-}
-
-.pwa-install-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  animation: bounce 2s ease-in-out infinite;
-}
-
-.pwa-install-text h3 {
-  margin: 0 0 8px 0;
-  color: var(--text);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.pwa-install-text p {
-  margin: 0 0 20px 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.pwa-install-prompt .btn {
-  margin: 0 4px;
-  padding: 10px 20px;
-  font-size: 14px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
 }
 
