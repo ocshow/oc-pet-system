@@ -19,7 +19,7 @@
           <h1>oc云台小窝</h1>
         </div>
         <div class="password-form">
-          <input type="password" id="password-input" placeholder="输入魔法口令" maxlength="20" />
+          <input type="password" id="password-input" placeholder="输入口令" maxlength="20" />
           <button id="password-submit" class="btn btn-primary">进入小窝</button>
         </div>
       </div>
@@ -27,28 +27,28 @@
 
     <div id="app" class="app" style="display: none;">
       <!-- 移动端菜单按钮 -->
-      <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="打开宝宝列表">
-        <span class="menu-icon">🐾</span>
-        <span class="menu-text">宝宝列表</span>
+      <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="打开OC列表">
+        <span class="menu-icon">✨</span>
+        <span class="menu-text">OC列表</span>
       </button>
 
       <!-- 侧边栏 - 桌面端显示 -->
       <aside id="sidebar" class="sidebar">
-        <ul id="pet-list" class="pet-list" aria-label="宝宝列表"></ul>
+        <ul id="pet-list" class="pet-list" aria-label="OC列表"></ul>
       </aside>
 
-      <!-- 移动端宝宝列表弹出层 -->
+      <!-- 移动端OC列表弹出层 -->
       <div id="mobile-pet-overlay" class="mobile-pet-overlay">
         <div class="mobile-pet-drawer">
           <div class="drawer-header">
-            <h3>我的宝宝</h3>
+            <h3>我的OC</h3>
             <button id="close-mobile-pet" class="close-btn" aria-label="关闭">
               <span>✕</span>
             </button>
           </div>
           <div class="drawer-content">
 
-            <ul id="mobile-pet-list" class="mobile-pet-list" aria-label="宝宝列表"></ul>
+            <ul id="mobile-pet-list" class="mobile-pet-list" aria-label="OC列表"></ul>
           </div>
         </div>
       </div>
@@ -56,8 +56,8 @@
       <main class="main">
         <section id="empty-state" class="empty-state">
           <div class="empty-emoji">🏠</div>
-          <h2>请选择宝宝</h2>
-          <p>从宝宝列表选择一只宝宝进行互动。</p>
+          <h2>请选择OC</h2>
+          <p>从OC列表选择一只OC进行互动。</p>
         </section>
 
         <section id="pet-detail" class="pet-detail hidden" aria-live="polite">
@@ -67,7 +67,7 @@
                 <div class="pet-info-left">
                   <div class="pet-identity-card">
                     <div class="pet-identity-left">
-                      <div id="pet-avatar" class="pet-avatar" aria-hidden="true">🐾</div>
+                      <div id="pet-avatar" class="pet-avatar" role="button" tabindex="0" title="选择OC" aria-label="选择OC">✨</div>
                       <div class="pet-meta">
                         <div class="pet-meta-main">
                           <h2 id="pet-name" class="pet-name">—</h2>
@@ -79,14 +79,8 @@
                       </div>
                     </div>
                     <div class="pet-identity-actions">
-                      <div class="pet-picker">
-                        <button id="open-pet-list-btn" class="btn btn-secondary btn-inline" title="选择宝宝" aria-label="选择宝宝">
-                          <span aria-hidden="true">🐾</span>
-                        </button>
-                        <div id="pet-picker-dropdown" class="pet-picker-dropdown hidden" role="listbox" aria-label="选择宝宝"></div>
-                      </div>
                       <button id="rename-btn" class="btn btn-secondary btn-inline" title="重命名" aria-label="重命名">✏️</button>
-                      <button id="change-password-btn" class="btn btn-secondary btn-inline" title="重新选择口令" aria-label="重新选择口令">🔑</button>
+                      <button id="create-pet-btn" class="btn btn-secondary btn-inline" title="新建OC" aria-label="新建OC">➕</button>
                     </div>
                   </div>
                 </div>
@@ -172,18 +166,18 @@
                 </div>
                 </div>
               </div>
-              <!-- 左侧宝宝展示区 -->
+              <!-- 左侧OC展示区 -->
               <div class="pet-stage">
-                <!-- 宝宝视频展示 -->
+                <!-- OC视频展示 -->
                 <div class="pet-media-container">
                   <video id="pet-stage-video" autoplay muted loop playsinline>
                     <source id="pet-video-source" type="video/mp4">
                   </video>
-                  <img id="pet-stage-image" alt="宝宝" />
+                  <img id="pet-stage-image" alt="OC" />
                 </div>
                 <div id="pet-effects" class="pet-effects" aria-hidden="true"></div>
               </div>
-              <!-- 互动操作（移动到宝宝容器下方，横向排列） -->
+              <!-- 互动操作（移动到OC容器下方，横向排列） -->
               <div class="actions-bar" aria-label="互动操作">
                 <div class="actions">
                   <button id="feed-btn" class="btn action-btn">
@@ -285,6 +279,7 @@
 
           <footer class="footer">
             <span id="last-updated">—</span>
+            <button id="change-password-btn" class="btn btn-secondary btn-inline" title="重新选择口令" aria-label="重新选择口令">🔑</button>
           </footer>
         </section>
       </main>
@@ -292,18 +287,30 @@
       <!-- 重命名弹窗 -->
       <dialog id="rename-dialog" class="dialog" aria-labelledby="rename-title">
         <div class="dialog-body">
-          <h3 id="rename-title" class="dialog-title">编辑宝宝</h3>
+          <h3 id="rename-title" class="dialog-title">编辑OC</h3>
           <div class="field">
             <span>名字</span>
             <input id="rename-name" type="text" maxlength="20" placeholder="请输入名字（最多20个字符）" />
           </div>
           <div class="field">
             <span>种族</span>
-            <input id="rename-species" type="text" maxlength="10" placeholder="请输入种族（如猫猫、鱼鱼、白鸟、九尾等）" />
+            <input id="rename-species" type="text" maxlength="20" placeholder="请输入种族（如鲛人、狼人、龙族等）" />
           </div>
           <div class="field">
             <span>时期</span>
             <input id="rename-stage" type="text" maxlength="10" placeholder="请输入时期（如幼年期、成长期、成年期等）" />
+          </div>
+          <div class="field">
+            <span>OC图片/视频</span>
+            <div class="file-upload-container">
+              <input id="rename-pet-media" type="file" accept="image/*,video/*" />
+              <label for="rename-pet-media" class="file-upload-label">
+                <span class="upload-icon">📁</span>
+                <span class="upload-text">选择新的图片或视频文件</span>
+              </label>
+              <div id="rename-media-preview" class="media-preview hidden"></div>
+            </div>
+            <div class="field-hint">支持 JPG、PNG、GIF 图片和 MP4、WebM 视频格式</div>
           </div>
           <div class="dialog-actions">
             <button id="rename-cancel" class="btn btn-secondary">取消</button>
@@ -311,6 +318,77 @@
           </div>
         </div>
       </dialog>
+
+      <!-- 新建OC弹窗 -->
+      <dialog id="create-pet-dialog" class="dialog" aria-labelledby="create-pet-title">
+        <div class="dialog-body">
+          <h3 id="create-pet-title" class="dialog-title">新建OC</h3>
+          <div class="field">
+            <span>名字 <span class="required">*</span></span>
+            <input id="create-pet-name" type="text" maxlength="20" placeholder="请输入OC名字（最多20个字符）" required />
+          </div>
+          <div class="field">
+            <span>种族 <span class="required">*</span></span>
+            <div style="position: relative;">
+              <input id="create-pet-species" type="text" maxlength="20" placeholder="请输入种族（如猫猫、鱼鱼、白鸟、狐狸等）" list="species-suggestions" required />
+              <span id="species-emoji-hint" class="species-emoji-hint"></span>
+            </div>
+            <datalist id="species-suggestions">
+              <option value="🧜 鲛人">🧜 鲛人</option>
+              <option value="🐺 狼人">🐺 狼人</option>
+              <option value="🐉 龙族">🐉 龙族</option>
+              <option value="🦅 凤凰">🦅 凤凰</option>
+              <option value="🦄 独角兽">🦄 独角兽</option>
+              <option value="🧚 精灵">🧚 精灵</option>
+              <option value="👼 天使">👼 天使</option>
+              <option value="😈 恶魔">😈 恶魔</option>
+              <option value="🧙 法师">🧙 法师</option>
+              <option value="⚔️ 战士">⚔️ 战士</option>
+              <option value="🏹 射手">🏹 射手</option>
+              <option value="🔮 巫师">🔮 巫师</option>
+              <option value="🦇 吸血鬼">🦇 吸血鬼</option>
+              <option value="🌙 月族">🌙 月族</option>
+              <option value="☀️ 日族">☀️ 日族</option>
+              <option value="✨ 其他">✨ 其他</option>
+            </datalist>
+          </div>
+          <div class="field">
+            <span>时期</span>
+            <input id="create-pet-stage" type="text" maxlength="10" placeholder="请输入时期（如幼年期、成长期、成年期等）" />
+          </div>
+          <div class="field">
+            <span>OC图片/视频</span>
+            <div class="file-upload-container">
+              <input id="create-pet-media" type="file" accept="image/*,video/*" />
+              <label for="create-pet-media" class="file-upload-label">
+                <span class="upload-icon">📁</span>
+                <span class="upload-text">选择图片或视频文件</span>
+              </label>
+              <div id="media-preview" class="media-preview hidden"></div>
+            </div>
+            <div class="field-hint">支持 JPG、PNG、GIF 图片和 MP4、WebM 视频格式</div>
+          </div>
+          <div class="dialog-actions">
+            <button id="create-pet-cancel" class="btn btn-secondary">取消</button>
+            <button id="create-pet-save" class="btn btn-primary">创建OC</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- 选择OC弹窗 -->
+      <dialog id="select-pet-dialog" class="dialog" aria-labelledby="select-pet-title">
+        <div class="dialog-body">
+          <div class="dialog-header">
+            <h3 id="select-pet-title" class="dialog-title">选择OC</h3>
+            <button id="select-pet-cancel" class="btn btn-secondary btn-compact">✕</button>
+          </div>
+          <div id="select-pet-list" class="select-pet-list">
+            <!-- OC列表将在这里动态生成 -->
+          </div>
+        </div>
+      </dialog>
+
+
     </div>
 
     <script src="js/app.js"></script>

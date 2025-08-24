@@ -14,8 +14,30 @@
       case '猫猫': return '🐱';
       case '鱼鱼': return '🐠';
       case '白鸟': return '🕊️';
-      case '九尾': return '🦊';
-      default: return '🐾';
+      case '狐狸': return '🦊';
+      case '狗狗': return '🐕';
+      case '兔子': return '🐰';
+      case '仓鼠': return '🐹';
+      case '龙龙': return '🐉';
+      case '凤凰': return '🦅';
+      case '熊猫': return '🐼';
+      case '老虎': return '🐯';
+      case '狮子': return '🦁';
+      case '独角兽': return '🦄';
+      case '精灵': return '🧚';
+      case '天使': return '👼';
+      case '恶魔': return '😈';
+      case '鲛人': return '🧜';
+      case '狼人': return '🐺';
+      case '龙族': return '🐉';
+      case '法师': return '🧙';
+      case '战士': return '⚔️';
+      case '射手': return '🏹';
+      case '巫师': return '🔮';
+      case '吸血鬼': return '🦇';
+      case '月族': return '🌙';
+      case '日族': return '☀️';
+      default: return '✨';
     }
   };
 
@@ -30,19 +52,87 @@
       case '鱼鱼': return 'fish';
       case '白鸟': return 'bird';
       case '狐狸': return 'fox';
+      case '狗狗': return 'dog';
+      case '兔子': return 'rabbit';
+      case '仓鼠': return 'hamster';
+      case '龙龙': return 'dragon';
+      case '凤凰': return 'phoenix';
+      case '熊猫': return 'panda';
+      case '老虎': return 'tiger';
+      case '狮子': return 'lion';
+      case '独角兽': return 'unicorn';
+      case '精灵': return 'elf';
+      case '天使': return 'angel';
+      case '恶魔': return 'demon';
+      case '鲛人': return 'mermaid';
+      case '狼人': return 'werewolf';
+      case '龙族': return 'dragon';
+      case '法师': return 'mage';
+      case '战士': return 'warrior';
+      case '射手': return 'archer';
+      case '巫师': return 'wizard';
+      case '吸血鬼': return 'vampire';
+      case '月族': return 'moon';
+      case '日族': return 'sun';
       default: return 'pet';
     }
   };
 
   function loadPetMedia(pet) {
     const key = pet.id;
-    const base = `assets/${key}`;
     const videoEl = document.getElementById('pet-stage-video');
     const imgEl = document.getElementById('pet-stage-image');
     if (!videoEl || !imgEl) return;
     
-    console.log('=== 开始加载宝宝媒体 ===');
-    console.log('宝宝ID:', key);
+    console.log('=== 开始加载OC媒体 ===');
+    console.log('OCID:', key);
+    
+    // 检查是否为自定义OC
+    if (key.startsWith('custom-')) {
+      // 自定义OC使用上传的媒体文件或SVG图片
+      if (pet.customMedia && pet.customMedia.dataUrl) {
+        const isVideo = pet.customMedia.type.startsWith('video/');
+        if (isVideo) {
+          // 显示视频
+          videoEl.style.display = 'block';
+          imgEl.style.display = 'none';
+          
+          // 清空现有视频源
+          while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
+          
+          // 创建新的视频源
+          const source = document.createElement('source');
+          source.src = pet.customMedia.dataUrl;
+          source.type = pet.customMedia.type;
+          videoEl.appendChild(source);
+          
+          // 设置视频属性
+          videoEl.muted = true;
+          videoEl.playsInline = true;
+          videoEl.loop = true;
+          videoEl.load();
+          
+          // 尝试播放
+          videoEl.play().catch(e => console.log('自定义视频播放失败:', e));
+        } else {
+          // 显示图片
+          videoEl.style.display = 'none';
+          imgEl.style.display = 'block';
+          imgEl.src = pet.customMedia.dataUrl;
+          imgEl.alt = pet.name;
+        }
+      } else {
+        // 没有自定义媒体时使用kong.png图片
+        videoEl.style.display = 'none';
+        imgEl.style.display = 'block';
+        imgEl.src = 'assets/kong.png';
+        imgEl.alt = pet.name;
+      }
+      return;
+    }
+    
+    // 原有的固定OC媒体加载逻辑
+    const base = `assets/${key}`;
     console.log('视频元素:', videoEl);
     console.log('图片元素:', imgEl);
     console.log('视频元素display:', videoEl.style.display);
@@ -64,7 +154,7 @@
     srcCandidates.push(`${base}.webm`);
     
     console.log('视频源候选:', srcCandidates);
-    console.log('当前宝宝ID:', key);
+    console.log('当前OCID:', key);
     console.log('是否为pal前缀:', /^pal-/.test(key));
     
     for (const src of srcCandidates) {
@@ -157,8 +247,8 @@
   function loadPetImage(imgEl, key) {
     if (!imgEl) return;
     
-    console.log('=== 开始加载宝宝图片 ===');
-    console.log('宝宝ID:', key);
+    console.log('=== 开始加载OC图片 ===');
+    console.log('OCID:', key);
     
     const base = `assets/${key}`;
     imgEl.alt = key;
@@ -167,9 +257,9 @@
     // 直接使用当前ID对应的文件
     console.log('尝试加载图片:', base + '.png');
     imgEl.onerror = () => {
-      console.log('图片加载失败，使用SVG');
+      console.log('图片加载失败，使用kong.png');
       imgEl.onerror = null;
-      imgEl.src = generatePetSvg(key);
+      imgEl.src = 'assets/kong.png';
     };
     imgEl.onload = () => {
       console.log('图片加载成功:', imgEl.src);
@@ -179,7 +269,7 @@
     imgEl.src = `${base}.png`;
   }
 
-  // 生成宝宝 SVG Data URL（根据物种与等级出不同配色与装饰）
+  // 生成OC SVG Data URL（根据物种与等级出不同配色与装饰）
   function generatePetSvg(key) {
     // 物种配色
     const palette = {
@@ -187,6 +277,27 @@
       'fish': ['#22d3ee', '#06b6d4'],
       'bird': ['#fbbf24', '#f59e0b'],
       'fox': ['#f97316', '#ea580c'],
+      'dog': ['#8b5cf6', '#a855f7'],
+      'rabbit': ['#ec4899', '#f472b6'],
+      'hamster': ['#f59e0b', '#d97706'],
+      'dragon': ['#dc2626', '#7c2d12'],
+      'phoenix': ['#f59e0b', '#dc2626'],
+      'panda': ['#000000', '#ffffff'],
+      'tiger': ['#f59e0b', '#92400e'],
+      'lion': ['#fbbf24', '#d97706'],
+      'unicorn': ['#a78bfa', '#c084fc'],
+      'elf': ['#34d399', '#10b981'],
+      'angel': ['#fbbf24', '#f3f4f6'],
+      'demon': ['#7c2d12', '#dc2626'],
+      'mermaid': ['#22d3ee', '#06b6d4'],
+      'werewolf': ['#8b5cf6', '#a855f7'],
+      'mage': ['#8b5cf6', '#c084fc'],
+      'warrior': ['#dc2626', '#f59e0b'],
+      'archer': ['#fbbf24', '#d97706'],
+      'wizard': ['#a78bfa', '#7c3aed'],
+      'vampire': ['#7c2d12', '#dc2626'],
+      'moon': ['#8b5cf6', '#a78bfa'],
+      'sun': ['#fbbf24', '#f59e0b'],
       'pet': ['#60a5fa', '#34d399'],
       '默认': ['#60a5fa', '#34d399']
     };
@@ -216,7 +327,7 @@
   const STORAGE_KEY = 'oc-pet-system/v1';
   const DEFAULT_STATE = { pets: [], selectedPetId: null };
 
-  // 四只固定宝宝的初始定义，id写死
+  // 四只固定OC的初始定义，id写死
   const ALL_PETS = [
     { id: 'pal-001', name: '可可', species: '猫猫' },
     { id: 'pal-002', name: '小鱼', species: '鱼鱼' },
@@ -229,19 +340,31 @@
     '1234': [0, 1],      // 口令1：猫猫和小鱼
     '5678': [0, 2],      // 口令2：猫猫和白鸟  
     '9999': [0, 3],      // 口令3：猫猫和狐狸
-    '0000': [0, 1, 2, 3] // 口令4：全部宝宝
+    '0000': [0, 1, 2, 3] // 口令4：全部OC
   };
 
 
 
-  let currentPets = []; // 当前显示的宝宝列表
+  let currentPets = []; // 当前显示的OC列表
 
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { ...DEFAULT_STATE };
+      console.log('loadState: 从localStorage读取的原始数据:', raw);
+      
+      if (!raw) {
+        console.log('loadState: 没有找到数据，返回默认状态');
+        return { ...DEFAULT_STATE };
+      }
+      
       const data = JSON.parse(raw);
-      if (!data || !Array.isArray(data.pets)) return { ...DEFAULT_STATE };
+      console.log('loadState: 解析后的数据:', data);
+      
+      if (!data || !Array.isArray(data.pets)) {
+        console.log('loadState: 数据格式无效，返回默认状态');
+        return { ...DEFAULT_STATE };
+      }
+      
       // 迁移：将旧的 pet- 前缀统一迁移为 pal-
       const migratedPets = data.pets.map((p) => {
         if (typeof p.id === 'string' && /^pet-/.test(p.id)) {
@@ -249,18 +372,26 @@
         }
         return p;
       });
+      
       let migratedSelected = data.selectedPetId ?? null;
       if (typeof migratedSelected === 'string' && /^pet-/.test(migratedSelected)) {
         migratedSelected = `pal-${migratedSelected.slice(4)}`;
       }
+      
+      console.log('loadState: 迁移后的OC列表:', migratedPets);
+      console.log('loadState: 迁移后的选中ID:', migratedSelected);
+      
       return { pets: migratedPets, selectedPetId: migratedSelected };
-    } catch {
+    } catch (error) {
+      console.error('loadState: 解析数据时出错:', error);
       return { ...DEFAULT_STATE };
     }
   }
 
   function saveState(state) {
+    console.log('saveState: 保存状态到localStorage:', state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    console.log('saveState: 状态已保存');
   }
 
   // ---------- Domain ----------
@@ -362,18 +493,44 @@
   const sleepBtn = $('#sleep-btn');
   const cleanBtn = $('#clean-btn');
   const renameBtn = $('#rename-btn');
+  const createPetBtn = $('#create-pet-btn');
   const actionsPanel = document.querySelector('.pet-stage .actions-panel');
-  // 不允许释放固定宝宝
+  // 不允许释放固定OC
 
-  // 移除创建对话框相关节点引用
+  // 新建OC对话框相关元素
+  const createPetDialog = $('#create-pet-dialog');
+  const createPetName = $('#create-pet-name');
+  const createPetSpecies = $('#create-pet-species');
+  const createPetStage = $('#create-pet-stage');
+  const createPetSave = $('#create-pet-save');
+  const createPetCancel = $('#create-pet-cancel');
 
   // ---------- State ----------
   let state = loadState();
-  let petListExpanded = false; // 新增：宝宝列表展开状态
+  let petListExpanded = false; // 新增：OC列表展开状态
 
-  // 保证固定宝宝存在（ID固定，名称/种族/时期可编辑不影响ID和外观）
+  // 控制新建OC按钮的显示状态
+  function updateCreatePetButtonVisibility() {
+    const createPetBtn = document.getElementById('create-pet-btn');
+    if (createPetBtn) {
+      // 检查当前口令是否解锁了全部OC（口令0000）
+      const currentPassword = localStorage.getItem('oc-pet-password');
+      const hasFullAccess = currentPassword === '0000';
+      
+      // 当口令是0000时显示新建OC按钮
+      if (hasFullAccess) {
+        createPetBtn.style.display = 'block';
+      } else {
+        createPetBtn.style.display = 'none';
+      }
+    }
+  }
+
+  // 保证固定OC存在（ID固定，名称/种族/时期可编辑不影响ID和外观），同时保留自定义OC
   function ensureFixedPets(stateIn) {
     console.log('ensureFixedPets 被调用，currentPets:', currentPets);
+    console.log('输入的stateIn:', stateIn);
+    console.log('stateIn.pets:', stateIn.pets);
     
     if (currentPets.length === 0) {
       console.log('currentPets 为空，返回空状态');
@@ -381,7 +538,10 @@
     }
     
     const existingById = new Map((stateIn.pets || []).map((p) => [p.id, p]));
-    const pets = currentPets.map((tpl) => {
+    console.log('existingById Map:', existingById);
+    
+    // 处理固定OC
+    const fixedPets = currentPets.map((tpl) => {
       const src = existingById.get(tpl.id) || {};
       return {
         id: tpl.id,
@@ -397,10 +557,25 @@
       };
     });
     
-    console.log('生成的宝宝数据:', pets);
+    // 保留自定义OC（ID以custom-开头的OC）
+    const customPets = (stateIn.pets || []).filter((p) => p.id && p.id.startsWith('custom-'));
+    console.log('找到的自定义OC:', customPets);
     
-    const selectedPetId = currentPets.some((p) => p.id === stateIn.selectedPetId) ? stateIn.selectedPetId : (pets.length > 0 ? pets[0].id : null);
-    return { pets, selectedPetId };
+    // 合并固定OC和自定义OC
+    const allPets = [...fixedPets, ...customPets];
+    
+    console.log('生成的OC数据:', allPets);
+    console.log('固定OC数量:', fixedPets.length);
+    console.log('自定义OC数量:', customPets.length);
+    
+    // 选择逻辑：优先选择已选中的OC，如果没有则选择第一个固定OC
+    let selectedPetId = stateIn.selectedPetId;
+    if (!selectedPetId || !allPets.some((p) => p.id === selectedPetId)) {
+      selectedPetId = allPets.length > 0 ? allPets[0].id : null;
+    }
+    
+    console.log('最终选择的OCID:', selectedPetId);
+    return { pets: allPets, selectedPetId };
   }
 
   // 迁移：将历史 pet- 前缀 ID 平滑迁移为 pal- 前缀
@@ -436,6 +611,9 @@
     
     // 渲染界面
     render();
+    
+    // 初始化新建OC按钮的显示状态
+    updateCreatePetButtonVisibility();
   } else {
     // 第一次进入，等待口令输入
     currentPets = [];
@@ -445,12 +623,12 @@
     saveState(state);
   }
 
-  // 自动修复历史数据：加载时为每只宝宝补 id
+  // 自动修复历史数据：加载时为每只OC补 id
   state.pets = state.pets.map((pet, idx) => {
     if (!pet.id) {
       pet.id = uid();
       // 控制台提示
-      console.warn('宝宝缺少id，已自动生成。请将原有资源文件重命名为：', pet.id);
+      console.warn('OC缺少id，已自动生成。请将原有资源文件重命名为：', pet.id);
     }
     return pet;
   });
@@ -465,20 +643,20 @@
     
     renderPetList();
     if (!state.selectedPetId) {
-      console.log('没有选中的宝宝，显示空状态');
+      console.log('没有选中的OC，显示空状态');
       emptyStateEl.classList.remove('hidden');
       detailEl.classList.add('hidden');
       return;
     }
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     if (!pet) {
-      console.log('找不到选中的宝宝，重置选择');
+      console.log('找不到选中的OC，重置选择');
       state.selectedPetId = null;
       saveState(state);
       render();
       return;
     }
-    console.log('渲染宝宝详情:', pet);
+    console.log('渲染OC详情:', pet);
     emptyStateEl.classList.add('hidden');
     detailEl.classList.remove('hidden');
     console.log('移除hidden类后，detailEl的hidden类:', detailEl?.classList.contains('hidden'));
@@ -491,6 +669,9 @@
     }
     
     renderPetDetail(pet);
+    
+    // 更新新建OC按钮的显示状态
+    updateCreatePetButtonVisibility();
   }
 
   function renderPetList() {
@@ -499,11 +680,11 @@
     // 清空现有内容
     listEl.innerHTML = '';
     
-    // 创建宝宝列表
+    // 创建OC列表
     const petListUl = document.createElement('ul');
     petListUl.className = 'pet-sub-list';
 
-    // 显示当前口令对应的宝宝
+    // 显示当前口令对应的OC
     state.pets.forEach((pet) => {
       const li = document.createElement('li');
       li.className = 'pet-item' + (pet.id === state.selectedPetId ? ' active' : '');
@@ -577,7 +758,7 @@
     xpText.textContent = `${Math.round(pet.xp)}`; // 显示实际亲密值
 
     // 更新时间
-    lastUpdatedEl.textContent = `上次更新：${formatTime(pet.lastUpdated)}`;
+    lastUpdatedEl.textContent = `${formatTime(pet.lastUpdated)}`;
   }
 
   function renderPetDetail(pet) {
@@ -593,12 +774,40 @@
       levelEl.classList.add('hidden');
       levelEl.style.display = 'none';
     }
-    // 顶部头像：使用物种对应的emoji
+    // 顶部头像：基于宠物ID固定显示，不受种族和名字修改影响
     if (avatarEl) {
-      avatarEl.textContent = speciesToEmoji(pet.species);
-      avatarEl.title = pet.species;
+      if (pet.id.startsWith('pal-')) {
+        // 预设宠物：根据ID显示固定的头像
+        const avatarMap = {
+          'pal-001': '🐱', // 可可 - 固定猫猫头像
+          'pal-002': '🐠', // 小鱼 - 固定鱼鱼头像
+          'pal-003': '🕊️', // 小白 - 固定白鸟头像
+          'pal-004': '🦊'  // 玖玖 - 固定狐狸头像
+        };
+        avatarEl.textContent = avatarMap[pet.id] || '✨';
+        avatarEl.title = `${pet.name} (${pet.species})`;
+      } else {
+        // 自定义宠物：优先使用上传的图片，没有则使用种族对应的emoji
+        if (pet.customMedia && pet.customMedia.dataUrl) {
+          // 有上传的图片，创建img元素显示
+          avatarEl.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = pet.customMedia.dataUrl;
+          img.alt = pet.name;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '50%';
+          avatarEl.appendChild(img);
+          avatarEl.title = `${pet.name} (${pet.species})`;
+        } else {
+          // 没有上传图片，使用种族对应的emoji
+          avatarEl.textContent = speciesToEmoji(pet.species);
+          avatarEl.title = pet.species;
+        }
+      }
     }
-    // 仅在进入/切换宝宝时加载媒体，避免行动时闪烁
+    // 仅在进入/切换OC时加载媒体，避免行动时闪烁
     if (!state.lastLoadedPetId || state.lastLoadedPetId !== pet.id) {
       loadPetMedia(pet);
       state.lastLoadedPetId = pet.id;
@@ -848,7 +1057,7 @@
   }
 
   feedBtn.addEventListener('click', () => { animatePet('feed'); updateSelected(ACTIONS.feed); });
-  // 打开/收起小游戏面板（浮动到宝宝容器，顶部对齐容器中心线）+ 玩耍动画
+  // 打开/收起小游戏面板（浮动到OC容器，顶部对齐容器中心线）+ 玩耍动画
   playBtn.addEventListener('click', () => {
     animatePet('play');
     const panel = document.getElementById('play-panel');
@@ -884,7 +1093,7 @@
       panel.style.width = '';
       const naturalWidth = panel.getBoundingClientRect().width;
 
-      // 作为浮动层显示在宝宝容器位置：顶部对齐容器中心线，保持原宽度
+      // 作为浮动层显示在OC容器位置：顶部对齐容器中心线，保持原宽度
       const rect = stage.getBoundingClientRect();
       panel.classList.add('as-overlay');
       panel.style.position = 'fixed';
@@ -916,6 +1125,88 @@
     actionsPanel && actionsPanel.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
   });
 
+  // 重命名弹窗文件上传处理
+  const renameMediaInput = document.getElementById('rename-pet-media');
+  const renameMediaPreview = document.getElementById('rename-media-preview');
+  
+  if (renameMediaInput && renameMediaPreview) {
+    renameMediaInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        renameMediaPreview.classList.add('hidden');
+        return;
+      }
+      
+      // 验证文件类型
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        alert('请选择图片或视频文件');
+        renameMediaInput.value = '';
+        return;
+      }
+      
+      // 验证文件大小（限制为10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        alert('文件大小不能超过10MB');
+        renameMediaInput.value = '';
+        return;
+      }
+      
+      // 创建预览
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        renameMediaPreview.innerHTML = '';
+        
+        if (isImage) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = '预览图片';
+          renameMediaPreview.appendChild(img);
+        } else {
+          const video = document.createElement('video');
+          video.src = e.target.result;
+          video.controls = true;
+          video.muted = true;
+          video.style.maxHeight = '80px';
+          renameMediaPreview.appendChild(video);
+        }
+        
+        // 添加文件信息
+        const mediaInfo = document.createElement('div');
+        mediaInfo.className = 'media-info';
+        
+        const mediaName = document.createElement('div');
+        mediaName.className = 'media-name';
+        mediaName.textContent = file.name;
+        
+        const mediaSize = document.createElement('div');
+        mediaSize.className = 'media-size';
+        mediaSize.textContent = formatFileSize(file.size);
+        
+        mediaInfo.appendChild(mediaName);
+        mediaInfo.appendChild(mediaSize);
+        renameMediaPreview.appendChild(mediaInfo);
+        
+        // 添加删除按钮
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-media';
+        removeBtn.textContent = '✕';
+        removeBtn.title = '移除文件';
+        removeBtn.addEventListener('click', () => {
+          renameMediaInput.value = '';
+          renameMediaPreview.classList.add('hidden');
+        });
+        
+        renameMediaPreview.appendChild(removeBtn);
+        renameMediaPreview.classList.remove('hidden');
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  }
+
   renameBtn.addEventListener('click', () => {
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     if (!pet) return;
@@ -925,12 +1216,21 @@
     const stageInput = document.getElementById('rename-stage');
     const saveBtn = document.getElementById('rename-save');
     const cancelBtn = document.getElementById('rename-cancel');
+    const mediaInput = document.getElementById('rename-pet-media');
+    const mediaPreview = document.getElementById('rename-media-preview');
     if (!dlg || !nameInput || !speciesInput || !stageInput || !saveBtn || !cancelBtn) return;
 
     // 预填
     nameInput.value = pet.name || '';
     speciesInput.value = pet.species || '猫猫';
     stageInput.value = pet.stage || '';
+    
+    // 清空文件上传
+    if (mediaInput) mediaInput.value = '';
+    if (mediaPreview) {
+      mediaPreview.innerHTML = '';
+      mediaPreview.classList.add('hidden');
+    }
 
     // 打开
     try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', 'true'); }
@@ -944,19 +1244,343 @@
 
     const onSave = () => {
       const newName = nameInput.value.trim().slice(0, 20);
-      const newSpecies = speciesInput.value.trim().slice(0, 10);
+      const newSpeciesWithEmoji = speciesInput.value.trim();
       const newStage = stageInput.value.trim().slice(0, 10);
+      
       if (newName) pet.name = newName;
-      if (newSpecies) pet.species = newSpecies;
+      
+      if (newSpeciesWithEmoji) {
+        pet.species = newSpeciesWithEmoji;
+      }
+      
       pet.stage = newStage; // 保存自定义时期
+      
+      // 处理新的媒体文件
+      const mediaInput = document.getElementById('rename-pet-media');
+      const file = mediaInput ? mediaInput.files[0] : null;
+      
+      if (file) {
+        // 有新的媒体文件
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          pet.customMedia = {
+            type: file.type,
+            name: file.name,
+            size: file.size,
+            dataUrl: e.target.result
+          };
+          
+          pet.lastUpdated = nowMs();
+          saveState(state);
+          render();
+          
+          // 更新新建OC按钮的显示状态
+          updateCreatePetButtonVisibility();
+          
+          onCancel();
+        };
+        
+        reader.readAsDataURL(file);
+        return; // 等待文件读取完成
+      }
+      
       pet.lastUpdated = nowMs();
-    saveState(state);
-    render();
+      saveState(state);
+      render();
       onCancel();
     };
 
     saveBtn.addEventListener('click', onSave);
     cancelBtn.addEventListener('click', onCancel);
+  });
+
+  // 新建OC按钮事件
+  createPetBtn.addEventListener('click', () => {
+    // 清空表单
+    createPetName.value = '';
+    createPetSpecies.value = '';
+    createPetStage.value = '';
+    
+    // 清空文件上传
+    const mediaInput = document.getElementById('create-pet-media');
+    const mediaPreview = document.getElementById('media-preview');
+    if (mediaInput) mediaInput.value = '';
+    if (mediaPreview) {
+      mediaPreview.innerHTML = '';
+      mediaPreview.classList.add('hidden');
+    }
+    
+    // 打开对话框
+    try { createPetDialog.showModal(); } catch (_) { createPetDialog.setAttribute('open', 'true'); }
+  });
+
+  // 文件上传处理
+  const mediaInput = document.getElementById('create-pet-media');
+  const mediaPreview = document.getElementById('media-preview');
+  
+  if (mediaInput && mediaPreview) {
+    mediaInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        mediaPreview.classList.add('hidden');
+        return;
+      }
+      
+      // 验证文件类型
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        alert('请选择图片或视频文件');
+        mediaInput.value = '';
+        return;
+      }
+      
+      // 验证文件大小（限制为10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        alert('文件大小不能超过10MB');
+        mediaInput.value = '';
+        return;
+      }
+      
+      // 创建预览
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        mediaPreview.innerHTML = '';
+        
+        if (isImage) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = '预览图片';
+          mediaPreview.appendChild(img);
+        } else {
+          const video = document.createElement('video');
+          video.src = e.target.result;
+          video.controls = true;
+          video.muted = true;
+          video.style.maxHeight = '80px';
+          mediaPreview.appendChild(video);
+        }
+        
+        // 添加文件信息
+        const mediaInfo = document.createElement('div');
+        mediaInfo.className = 'media-info';
+        
+        const mediaName = document.createElement('div');
+        mediaName.className = 'media-name';
+        mediaName.textContent = file.name;
+        
+        const mediaSize = document.createElement('div');
+        mediaSize.className = 'media-size';
+        mediaSize.textContent = formatFileSize(file.size);
+        
+        mediaInfo.appendChild(mediaName);
+        mediaInfo.appendChild(mediaSize);
+        mediaPreview.appendChild(mediaInfo);
+        
+        // 添加删除按钮
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-media';
+        removeBtn.textContent = '✕';
+        removeBtn.title = '移除文件';
+        removeBtn.addEventListener('click', () => {
+          mediaInput.value = '';
+          mediaPreview.classList.add('hidden');
+        });
+        
+        mediaPreview.appendChild(removeBtn);
+        mediaPreview.classList.remove('hidden');
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  // 文件大小格式化函数
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // 新建OC保存按钮事件
+  createPetSave.addEventListener('click', () => {
+    const name = createPetName.value.trim();
+    const speciesWithEmoji = createPetSpecies.value;
+    const stage = createPetStage.value.trim();
+    
+          if (!name || !speciesWithEmoji) {
+        alert('请填写OC名字和种族');
+        return;
+      }
+
+    // 从带emoji的种族值中提取纯种族名称
+    // 例如："🐱 猫猫" -> "猫猫"
+    const species = speciesWithEmoji.replace(/^[^\s]+\s/, '').trim();
+    
+    if (!species) {
+      alert('种族格式不正确，请重新选择');
+      return;
+    }
+
+    // 获取上传的文件
+    const mediaInput = document.getElementById('create-pet-media');
+    const file = mediaInput ? mediaInput.files[0] : null;
+    
+    // 生成唯一ID
+    const petId = `custom-${uid()}`;
+    
+    // 创建新OC对象
+    const newPet = createPet({
+      id: petId,
+      name: name,
+      species: species
+    });
+    
+    if (stage) {
+      newPet.stage = stage;
+    }
+    
+    // 如果有上传的文件，保存文件信息
+    if (file) {
+      newPet.customMedia = {
+        type: file.type,
+        name: file.name,
+        size: file.size
+      };
+      
+      // 将文件转换为Data URL并保存
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        newPet.customMedia.dataUrl = e.target.result;
+        
+        // 添加到OC列表
+        state.pets.push(newPet);
+        state.selectedPetId = petId;
+        saveState(state);
+        
+        // 关闭对话框
+        createPetDialog.close();
+        createPetDialog.removeAttribute('open');
+        
+        // 重新渲染
+        render();
+        
+        // 更新新建OC按钮的显示状态
+        updateCreatePetButtonVisibility();
+        
+        // 显示成功提示
+        alert(`OC"${name}"创建成功！`);
+      };
+      
+      reader.readAsDataURL(file);
+      return; // 等待文件读取完成
+    }
+
+    // 没有文件时直接创建
+    state.pets.push(newPet);
+    state.selectedPetId = petId;
+    saveState(state);
+    
+    // 关闭对话框
+    createPetDialog.close();
+    createPetDialog.removeAttribute('open');
+    
+    // 重新渲染
+    render();
+    
+    // 显示成功提示
+            alert(`OC"${name}"创建成功！`);
+  });
+
+  // 新建OC取消按钮事件
+  createPetCancel.addEventListener('click', () => {
+    createPetDialog.close();
+    createPetDialog.removeAttribute('open');
+  });
+
+  // 新建OC回车键提交
+  createPetName.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      createPetSave.click();
+    }
+  });
+  
+  // 种族输入框回车键提交
+  createPetSpecies.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      createPetSave.click();
+    }
+  });
+  
+  // 种族输入框智能提示
+  createPetSpecies.addEventListener('input', (e) => {
+    const input = e.target;
+    const value = input.value.trim();
+    const emojiHint = document.getElementById('species-emoji-hint');
+    
+    // 如果输入为空，隐藏emoji提示
+    if (!value) {
+      if (emojiHint) {
+        emojiHint.textContent = '';
+        emojiHint.classList.remove('visible');
+      }
+      return;
+    }
+    
+    // 从带emoji的种族值中提取纯种族名称
+    const species = value.replace(/^[^\s]+\s/, '').trim();
+    
+    // 检查是否匹配预设种族，如果匹配则显示对应的emoji
+    const speciesEmojis = {
+      '鲛人': '🧜',
+      '狼人': '🐺',
+      '龙族': '🐉',
+      '凤凰': '🦅',
+      '独角兽': '🦄',
+      '精灵': '🧚',
+      '天使': '👼',
+      '恶魔': '😈',
+      '法师': '🧙',
+      '战士': '⚔️',
+      '射手': '🏹',
+      '巫师': '🔮',
+      '吸血鬼': '🦇',
+      '月族': '🌙',
+      '日族': '☀️'
+    };
+    
+    // 显示emoji提示
+    if (emojiHint) {
+      if (speciesEmojis[species]) {
+        emojiHint.textContent = speciesEmojis[value];
+        emojiHint.classList.add('visible');
+        console.log(`选择了预设种族: ${species} ${speciesEmojis[species]}`);
+      } else {
+        emojiHint.textContent = '✨';
+        emojiHint.classList.add('visible');
+        console.log(`输入了自定义种族: ${species}`);
+      }
+    }
+  });
+  
+  // 种族输入框失去焦点时隐藏emoji提示
+  createPetSpecies.addEventListener('blur', () => {
+    const emojiHint = document.getElementById('species-emoji-hint');
+    if (emojiHint) {
+      emojiHint.classList.remove('visible');
+    }
+  });
+  
+  // 种族输入框获得焦点时显示emoji提示
+  createPetSpecies.addEventListener('focus', () => {
+    const emojiHint = document.getElementById('species-emoji-hint');
+    const value = createPetSpecies.value.trim();
+    if (emojiHint && value) {
+      emojiHint.classList.add('visible');
+    }
   });
 
   // 禁止释放
@@ -983,6 +1607,16 @@
 
   // ---------- Initial Render ----------
   render();
+  
+  // 初始化时隐藏新建OC按钮
+  updateCreatePetButtonVisibility();
+
+
+
+  // 自定义弹窗功能
+
+
+
 
   // ---------- Mini Games (Play) ----------
   const playInlineClose = document.getElementById('play-inline-close');
@@ -1302,49 +1936,106 @@
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   const mobilePetOverlay = document.getElementById('mobile-pet-overlay');
   const closeMobilePetBtn = document.getElementById('close-mobile-pet');
-  const openPetListBtn = document.getElementById('open-pet-list-btn');
-  const petPickerDropdown = document.getElementById('pet-picker-dropdown');
+  const petAvatar = document.getElementById('pet-avatar');
+  const selectPetDialog = document.getElementById('select-pet-dialog');
+  const selectPetList = document.getElementById('select-pet-list');
+  const selectPetCancel = document.getElementById('select-pet-cancel');
 
-  // 顶部按钮改为下拉选择器
-  function renderPetPicker() {
-    if (!petPickerDropdown) return;
-    petPickerDropdown.innerHTML = '';
+
+
+
+  // 头像点击事件 - 显示选择OC弹窗
+  petAvatar && petAvatar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    console.log('头像被点击了！');
+    renderSelectPetList();
+    showSelectPetDialog();
+  });
+
+  // 头像键盘事件（无障碍访问）
+  petAvatar && petAvatar.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      petAvatar.click();
+    }
+  });
+
+  // 渲染选择OC列表
+  function renderSelectPetList() {
+    if (!selectPetList) return;
+    console.log('开始渲染选择OC列表，当前OC数量:', state.pets.length);
+    
+    selectPetList.innerHTML = '';
     state.pets.forEach((pet) => {
       const item = document.createElement('div');
-      item.className = `pet-picker-item ${pet.id === state.selectedPetId ? 'active' : ''}`;
-      item.setAttribute('role', 'option');
-      item.setAttribute('aria-selected', pet.id === state.selectedPetId ? 'true' : 'false');
+      item.className = `select-pet-item ${pet.id === state.selectedPetId ? 'active' : ''}`;
       item.innerHTML = `
         <span class="pet-emoji">${speciesToEmoji(pet.species)}</span>
-        <div class="pet-item-main">
-          <span class="pet-item-name">${pet.name}</span>
+        <div class="pet-info">
+          <div class="pet-name">${pet.name}</div>
+          <div class="pet-species">${pet.species}</div>
         </div>
       `;
+      
       item.addEventListener('click', () => {
+        console.log('选择了OC:', pet.name);
         state.selectedPetId = pet.id;
         saveState(state);
         render();
-        petPickerDropdown.classList.add('hidden');
+        hideSelectPetDialog();
       });
-      petPickerDropdown.appendChild(item);
+      
+      selectPetList.appendChild(item);
     });
+    console.log('选择OC列表渲染完成');
   }
 
-  openPetListBtn && openPetListBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!petPickerDropdown) return;
-    renderPetPicker();
-    petPickerDropdown.classList.toggle('hidden');
+  // 显示选择OC弹窗（定位在头像下方）
+  function showSelectPetDialog() {
+    if (!selectPetDialog || !petAvatar) return;
+    
+    // 获取头像位置
+    const avatarRect = petAvatar.getBoundingClientRect();
+    
+    // 设置弹窗位置
+    selectPetDialog.style.position = 'fixed';
+    selectPetDialog.style.top = (avatarRect.bottom + 8) + 'px';
+    selectPetDialog.style.left = avatarRect.left + 'px';
+    selectPetDialog.style.transform = 'none';
+    selectPetDialog.style.margin = '0';
+    selectPetDialog.style.padding = '0';
+    selectPetDialog.style.border = 'none';
+    selectPetDialog.style.background = 'transparent';
+    selectPetDialog.style.boxShadow = 'none';
+    selectPetDialog.style.zIndex = '3000';
+    
+    // 显示弹窗
+    selectPetDialog.setAttribute('open', 'true');
+    selectPetDialog.style.display = 'block';
+  }
+
+  // 隐藏选择OC弹窗
+  function hideSelectPetDialog() {
+    if (!selectPetDialog) return;
+    selectPetDialog.removeAttribute('open');
+    selectPetDialog.style.display = 'none';
+  }
+
+  // 选择OC弹窗取消按钮
+  selectPetCancel && selectPetCancel.addEventListener('click', () => {
+    hideSelectPetDialog();
   });
 
-  // 点击页面空白处关闭
+  // 点击页面空白处关闭选择OC弹窗
   document.addEventListener('click', (e) => {
-    if (!petPickerDropdown || petPickerDropdown.classList.contains('hidden')) return;
-    const within = petPickerDropdown.contains(e.target) || (openPetListBtn && openPetListBtn.contains(e.target));
-    if (!within) petPickerDropdown.classList.add('hidden');
+    if (!selectPetDialog || selectPetDialog.style.display !== 'block') return;
+    const within = selectPetDialog.contains(e.target) || petAvatar.contains(e.target);
+    if (!within) {
+      hideSelectPetDialog();
+    }
   });
 
-  // 关闭移动端宝宝列表
+  // 关闭移动端OC列表
   closeMobilePetBtn && closeMobilePetBtn.addEventListener('click', () => {
     mobilePetOverlay.classList.remove('active');
     setTimeout(() => {
@@ -1390,7 +2081,7 @@
 
 
 
-  // 同步移动端宝宝列表
+  // 同步移动端OC列表
   function syncMobilePetList() {
     const mobilePetList = document.getElementById('mobile-pet-list');
     if (!mobilePetList) return;
@@ -1675,9 +2366,9 @@
     
     const petIndices = PASSWORDS[password];
     if (petIndices) {
-      console.log('口令正确，宝宝索引:', petIndices);
+      console.log('口令正确，OC索引:', petIndices);
       currentPets = petIndices.map(index => ALL_PETS[index]);
-      console.log('设置的当前宝宝:', currentPets);
+      console.log('设置的当前OC:', currentPets);
       return true;
     }
     
@@ -1689,7 +2380,7 @@
   function enterSystem() {
     if (currentPets.length === 0) return;
     
-    console.log('进入系统，当前宝宝:', currentPets);
+    console.log('进入系统，当前OC:', currentPets);
     
     // 保存当前使用的口令到localStorage
     const currentPassword = passwordInput.value.trim();
@@ -1702,14 +2393,14 @@
     // 显示主应用
     appContainer.style.display = 'grid';
     
-    // 重新初始化宝宝数据
+    // 重新初始化OC数据
     state = ensureFixedPets(state);
     state.pets = state.pets.map((pet) => applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated)));
     saveState(state);
     
     console.log('初始化后的状态:', state);
     
-    // 确保有选中的宝宝
+    // 确保有选中的OC
     if (!state.selectedPetId && state.pets.length > 0) {
       state.selectedPetId = state.pets[0].id;
       saveState(state);
