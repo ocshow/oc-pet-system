@@ -512,16 +512,30 @@
   function updateCreatePetButtonVisibility() {
     const createPetBtn = document.getElementById('create-pet-btn');
     if (createPetBtn) {
-      // 检查当前口令是否解锁了全部OC（口令0000）
+      // 检查当前口令是否解锁了全部OC
       const currentPassword = localStorage.getItem('oc-pet-password');
-      const hasFullAccess = currentPassword === '0000';
+      console.log('检查新建OC按钮显示状态，当前口令:', currentPassword);
       
-      // 当口令是0000时显示新建OC按钮
+      // 检查是否解锁了全部OC（索引包含0,1,2,3）
+      const hasFullAccess = currentPassword && PASSWORDS[currentPassword] && 
+                           PASSWORDS[currentPassword].length === 4 && 
+                           PASSWORDS[currentPassword].includes(0) && 
+                           PASSWORDS[currentPassword].includes(1) && 
+                           PASSWORDS[currentPassword].includes(2) && 
+                           PASSWORDS[currentPassword].includes(3);
+      
+      console.log('是否解锁全部OC:', hasFullAccess);
+      
+      // 当解锁全部OC时显示新建OC按钮
       if (hasFullAccess) {
         createPetBtn.style.display = 'block';
+        console.log('显示新建OC按钮');
       } else {
         createPetBtn.style.display = 'none';
+        console.log('隐藏新建OC按钮');
       }
+    } else {
+      console.log('未找到新建OC按钮元素');
     }
   }
 
