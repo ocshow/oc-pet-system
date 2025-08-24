@@ -330,27 +330,35 @@
           <div class="field">
             <span>种族 <span class="required">*</span></span>
             <div style="position: relative;">
-              <input id="create-pet-species" type="text" maxlength="20" placeholder="请输入种族（如猫猫、鱼鱼、白鸟、狐狸等）" list="species-suggestions" required />
+              <input id="create-pet-species" type="text" maxlength="20" placeholder="请输入种族（如猫猫、鱼鱼、白鸟、狐狸等）" required />
+              <button type="button" id="species-selector-btn" class="species-selector-btn" aria-label="选择种族">📋</button>
               <span id="species-emoji-hint" class="species-emoji-hint"></span>
             </div>
-            <datalist id="species-suggestions">
-              <option value="🧜 鲛人">🧜 鲛人</option>
-              <option value="🐺 狼人">🐺 狼人</option>
-              <option value="🐉 龙族">🐉 龙族</option>
-              <option value="🦅 凤凰">🦅 凤凰</option>
-              <option value="🦄 独角兽">🦄 独角兽</option>
-              <option value="🧚 精灵">🧚 精灵</option>
-              <option value="👼 天使">👼 天使</option>
-              <option value="😈 恶魔">😈 恶魔</option>
-              <option value="🧙 法师">🧙 法师</option>
-              <option value="⚔️ 战士">⚔️ 战士</option>
-              <option value="🏹 射手">🏹 射手</option>
-              <option value="🔮 巫师">🔮 巫师</option>
-              <option value="🦇 吸血鬼">🦇 吸血鬼</option>
-              <option value="🌙 月族">🌙 月族</option>
-              <option value="☀️ 日族">☀️ 日族</option>
-              <option value="✨ 其他">✨ 其他</option>
-            </datalist>
+            <!-- 自定义种族选择器 -->
+            <div id="species-selector" class="species-selector hidden">
+              <div class="species-selector-header">
+                <span>选择种族</span>
+                <button type="button" id="close-species-selector" class="close-species-btn">✕</button>
+              </div>
+              <div class="species-options">
+                <div class="species-option" data-value="🧜 鲛人">🧜 鲛人</div>
+                <div class="species-option" data-value="🐺 狼人">🐺 狼人</div>
+                <div class="species-option" data-value="🐉 龙族">🐉 龙族</div>
+                <div class="species-option" data-value="🦅 凤凰">🦅 凤凰</div>
+                <div class="species-option" data-value="🦄 独角兽">🦄 独角兽</div>
+                <div class="species-option" data-value="🧚 精灵">🧚 精灵</div>
+                <div class="species-option" data-value="👼 天使">👼 天使</div>
+                <div class="species-option" data-value="😈 恶魔">😈 恶魔</div>
+                <div class="species-option" data-value="🧙 法师">🧙 法师</div>
+                <div class="species-option" data-value="⚔️ 战士">⚔️ 战士</div>
+                <div class="species-option" data-value="🏹 射手">🏹 射手</div>
+                <div class="species-option" data-value="🔮 巫师">🔮 巫师</div>
+                <div class="species-option" data-value="🦇 吸血鬼">🦇 吸血鬼</div>
+                <div class="species-option" data-value="🌙 月族">🌙 月族</div>
+                <div class="species-option" data-value="☀️ 日族">☀️ 日族</div>
+                <div class="species-option" data-value="✨ 其他">✨ 其他</div>
+              </div>
+            </div>
           </div>
           <div class="field">
             <span>时期</span>

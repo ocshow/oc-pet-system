@@ -271,7 +271,6 @@
 
   // 生成OC SVG Data URL（根据物种与等级出不同配色与装饰）
   function generatePetSvg(key) {
-    // 物种配色
     const palette = {
       'cat': ['#f472b6', '#60a5fa'],
       'fish': ['#22d3ee', '#06b6d4'],
@@ -335,12 +334,12 @@
     { id: 'pal-004', name: '玖玖', species: '狐狸' }
   ];
 
-  // 口令配置
+  // 配置
   const PASSWORDS = {
-    '1234': [0, 1],      // 口令1：猫猫和小鱼
-    '5678': [0, 2],      // 口令2：猫猫和白鸟  
-    '9999': [0, 3],      // 口令3：猫猫和狐狸
-    '0000': [0, 1, 2, 3] // 口令4：全部OC
+    'K9mN7pQ2x': [0, 1],      
+    'R8vL5hJ9w': [0, 2],       
+    'T3yU6kM4z': [0, 3],      
+    'X7bN2qP8m': [0, 1, 2, 3] 
   };
 
 
@@ -1515,7 +1514,51 @@
     }
   });
   
-  // 种族输入框智能提示
+  // 自定义种族选择器功能
+  const speciesSelectorBtn = document.getElementById('species-selector-btn');
+  const speciesSelector = document.getElementById('species-selector');
+  const closeSpeciesSelector = document.getElementById('close-species-selector');
+  const speciesOptions = document.querySelectorAll('.species-option');
+
+  // 打开种族选择器
+  if (speciesSelectorBtn) {
+    speciesSelectorBtn.addEventListener('click', () => {
+      speciesSelector.classList.toggle('hidden');
+    });
+  }
+
+  // 关闭种族选择器
+  if (closeSpeciesSelector) {
+    closeSpeciesSelector.addEventListener('click', () => {
+      speciesSelector.classList.add('hidden');
+    });
+  }
+
+  // 选择种族选项
+  speciesOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      const value = option.getAttribute('data-value');
+      createPetSpecies.value = value;
+      speciesSelector.classList.add('hidden');
+      
+      // 更新emoji提示
+      const emojiHint = document.getElementById('species-emoji-hint');
+      if (emojiHint) {
+        emojiHint.textContent = value.split(' ')[0]; // 提取emoji部分
+        emojiHint.classList.add('visible');
+      }
+    });
+  });
+
+  // 点击外部关闭种族选择器
+  document.addEventListener('click', (e) => {
+    if (speciesSelector && !speciesSelector.contains(e.target) && 
+        !speciesSelectorBtn.contains(e.target)) {
+      speciesSelector.classList.add('hidden');
+    }
+  });
+
+  // 种族输入框智能提示（保留原有功能）
   createPetSpecies.addEventListener('input', (e) => {
     const input = e.target;
     const value = input.value.trim();
