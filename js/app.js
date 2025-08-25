@@ -87,47 +87,96 @@
     console.log('=== 开始加载OC媒体 ===');
     console.log('OCID:', key);
     
-    // 检查是否为自定义OC
-    if (key.startsWith('custom-')) {
-      // 自定义OC使用上传的媒体文件或SVG图片
-      if (pet.customMedia && pet.customMedia.dataUrl) {
-        const isVideo = pet.customMedia.type.startsWith('video/');
+    // 优先：任意OC如果存在自定义媒体，则直接使用（覆盖预设OC）
+    if (pet.customMedia && (pet.customMedia.dataUrl || pet.customMedia.mediaId)) {
+      const useCustomMedia = async () => {
+        try {
+          let srcUrl = pet.customMedia.dataUrl || '';
+          let mime = pet.customMedia.type || '';
+          if (!srcUrl && pet.customMedia.mediaId) {
+            // 从IndexedDB读取并创建objectURL
+            const rec = await idbGetMedia(pet.customMedia.mediaId);
+            if (rec && rec.blob) {
+              if (objectUrlCache.has(pet.customMedia.mediaId)) {
+                srcUrl = objectUrlCache.get(pet.customMedia.mediaId);
+              } else {
+                srcUrl = URL.createObjectURL(rec.blob);
+                objectUrlCache.set(pet.customMedia.mediaId, srcUrl);
+              }
+              mime = rec.blob.type || mime;
+            }
+          }
+          const isVideo = mime.startsWith('video/');
+          const isGif = mime === 'image/gif' || (/\.gif(\?|$)/i.test(srcUrl));
         if (isVideo) {
-          // 显示视频
-          videoEl.style.display = 'block';
-          imgEl.style.display = 'none';
-          
-          // 清空现有视频源
+            // 配置视频属性，确保在移动端/微信内可自动播放
           while (videoEl.firstChild) videoEl.removeChild(videoEl.firstChild);
-          
-          // 创建新的视频源
           const source = document.createElement('source');
-          source.src = pet.customMedia.dataUrl;
-          source.type = pet.customMedia.type;
+            source.src = srcUrl;
+            source.type = mime || 'video/mp4';
           videoEl.appendChild(source);
-          
-          // 设置视频属性
           videoEl.muted = true;
+            videoEl.setAttribute('muted', '');
           videoEl.playsInline = true;
+            videoEl.setAttribute('playsinline', '');
+            videoEl.setAttribute('webkit-playsinline', '');
+            videoEl.autoplay = true;
           videoEl.loop = true;
-          videoEl.load();
-          
-          // 尝试播放
-          videoEl.play().catch(e => console.log('自定义视频播放失败:', e));
+
+            // 初始隐藏，待加载成功后再显示
+            videoEl.style.display = 'none';
+            imgEl.style.display = 'none';
+
+            const onLoaded = () => {
+              videoEl.style.display = 'block';
+              imgEl.style.display = 'none';
+              // 强制播放，若被策略阻止，则在首次点击时再尝试
+              videoEl.play().catch((e) => {
+                if (e && e.name === 'NotAllowedError') {
+                  const tryPlay = () => { videoEl.play().catch(() => {}); document.removeEventListener('click', tryPlay); };
+                  document.addEventListener('click', tryPlay, { once: true });
+                }
+              });
+            };
+            const onError = (e) => {
+              console.log('自定义视频加载失败:', e);
+              // 失败时尝试显示图片占位
+              videoEl.style.display = 'none';
+              imgEl.style.display = 'block';
+              imgEl.src = 'assets/kong.png';
+              imgEl.alt = pet.name;
+            };
+            videoEl.onloadeddata = onLoaded;
+            videoEl.oncanplaythrough = () => { if (videoEl.paused) videoEl.play().catch(() => {}); };
+            videoEl.onerror = onError;
+            videoEl.load();
+          } else if (isGif) {
+            // GIF：直接作为img展示，可自动播放动画
+            videoEl.style.display = 'none';
+            imgEl.style.display = 'block';
+            imgEl.src = srcUrl;
+            imgEl.alt = pet.name;
         } else {
-          // 显示图片
           videoEl.style.display = 'none';
           imgEl.style.display = 'block';
-          imgEl.src = pet.customMedia.dataUrl;
+            imgEl.src = srcUrl;
           imgEl.alt = pet.name;
         }
-      } else {
-        // 没有自定义媒体时使用kong.png图片
+        } catch (err) {
+          console.error('加载自定义媒体失败:', err);
+        }
+      };
+      useCustomMedia();
+      return;
+    }
+
+    // 检查是否为自定义OC
+    if (key.startsWith('custom-')) {
+      // 自定义OC且无自定义媒体时使用kong.png图片
         videoEl.style.display = 'none';
         imgEl.style.display = 'block';
         imgEl.src = 'assets/kong.png';
         imgEl.alt = pet.name;
-      }
       return;
     }
     
@@ -325,6 +374,62 @@
   // ---------- Persistence ----------
   const STORAGE_KEY = 'oc-pet-system/v1';
   const DEFAULT_STATE = { pets: [], selectedPetId: null };
+  // 大媒体文件的临时URL缓存，避免重复创建
+  const objectUrlCache = new Map(); // key -> objectURL
+
+  // ---------- IndexedDB for Media (images/videos) ----------
+  let mediaDbPromise = null;
+  function openMediaDb() {
+    if (mediaDbPromise) return mediaDbPromise;
+    mediaDbPromise = new Promise((resolve, reject) => {
+      try {
+        const req = indexedDB.open('oc-pet-media', 1);
+        req.onupgradeneeded = (e) => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('media')) {
+            db.createObjectStore('media', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      } catch (err) {
+        reject(err);
+      }
+    });
+    return mediaDbPromise;
+  }
+
+  async function idbSaveMedia(id, blob, meta = {}) {
+    const db = await openMediaDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('media', 'readwrite');
+      const store = tx.objectStore('media');
+      const rec = { id, blob, meta, updatedAt: Date.now() };
+      const req = store.put(rec);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbGetMedia(id) {
+    const db = await openMediaDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('media', 'readonly');
+      const store = tx.objectStore('media');
+      const req = store.get(id);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    const [header, data] = dataUrl.split(',');
+    const mime = (header.match(/data:(.*?);base64/) || [])[1] || 'application/octet-stream';
+    const bytes = atob(data);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
 
   // 四只固定OC的初始定义，id写死
   const ALL_PETS = [
@@ -567,6 +672,8 @@
         xp: clamp(typeof src.xp === 'number' ? src.xp : 0, 0, 999), // 新增：亲密值
         stage: typeof src.stage === 'string' ? src.stage : '',
         lastUpdated: typeof src.lastUpdated === 'number' ? src.lastUpdated : nowMs(),
+        // 保留自定义媒体（允许预设OC覆盖显示上传媒体）
+        customMedia: src.customMedia ? { ...src.customMedia } : undefined,
       };
     });
     
@@ -787,22 +894,16 @@
       levelEl.classList.add('hidden');
       levelEl.style.display = 'none';
     }
-    // 顶部头像：基于宠物ID固定显示，不受种族和名字修改影响
+    // 顶部头像：有自定义媒体则优先显示；否则预设OC显示固定emoji
     if (avatarEl) {
-      if (pet.id.startsWith('pal-')) {
-        // 预设宠物：根据ID显示固定的头像
-        const avatarMap = {
-          'pal-001': '🐱', // 可可 - 固定猫猫头像
-          'pal-002': '🐠', // 小鱼 - 固定鱼鱼头像
-          'pal-003': '🕊️', // 小白 - 固定白鸟头像
-          'pal-004': '🦊'  // 玖玖 - 固定狐狸头像
-        };
-        avatarEl.textContent = avatarMap[pet.id] || '✨';
-        avatarEl.title = `${pet.name} (${pet.species})`;
-      } else {
-        // 自定义宠物：优先使用上传的图片，没有则使用种族对应的emoji
+      // 统一头像容器：正方形裁剪区域
+      try {
+        avatarEl.style.aspectRatio = '1 / 1';
+        avatarEl.style.overflow = 'hidden';
+        avatarEl.style.display = 'block';
+      } catch (_) {}
         if (pet.customMedia && pet.customMedia.dataUrl) {
-          // 有上传的图片，创建img元素显示
+        // 有上传的图片，创建img元素显示（覆盖预设OC）
           avatarEl.innerHTML = '';
           const img = document.createElement('img');
           img.src = pet.customMedia.dataUrl;
@@ -810,14 +911,24 @@
           img.style.width = '100%';
           img.style.height = '100%';
           img.style.objectFit = 'cover';
-          img.style.borderRadius = '50%';
+          // 保持方形裁剪效果
+          img.style.display = 'block';
           avatarEl.appendChild(img);
+          avatarEl.title = `${pet.name} (${pet.species})`;
+      } else if (pet.id.startsWith('pal-')) {
+        // 预设宠物：根据ID显示固定的头像
+        const avatarMap = {
+          'pal-001': '🐱',
+          'pal-002': '🐠',
+          'pal-003': '🕊️',
+          'pal-004': '🦊'
+        };
+        avatarEl.textContent = avatarMap[pet.id] || '✨';
           avatarEl.title = `${pet.name} (${pet.species})`;
         } else {
           // 没有上传图片，使用种族对应的emoji
           avatarEl.textContent = speciesToEmoji(pet.species);
           avatarEl.title = pet.species;
-        }
       }
     }
     // 仅在进入/切换OC时加载媒体，避免行动时闪烁
@@ -1159,6 +1270,7 @@
         renameMediaInput.value = '';
         return;
       }
+      // 允许视频与图片，但预览区视频仅小窗预览
       
       // 验证文件大小（限制为10MB）
       if (file.size > 10 * 1024 * 1024) {
@@ -1255,7 +1367,7 @@
       cancelBtn.removeEventListener('click', onCancel);
     };
 
-    const onSave = () => {
+    const onSave = async () => {
       const newName = nameInput.value.trim().slice(0, 20);
       const newSpeciesWithEmoji = speciesInput.value.trim();
       const newStage = stageInput.value.trim().slice(0, 10);
@@ -1273,28 +1385,50 @@
       const file = mediaInput ? mediaInput.files[0] : null;
       
       if (file) {
-        // 有新的媒体文件
-        const reader = new FileReader();
-        reader.onload = (e) => {
+        try {
+          // 图片：若为 GIF 则存入 IndexedDB 保持动图；其他图片压缩后存 dataUrl
+          if (file.type === 'image/gif') {
+            const mediaId = `media-${uid()}`;
+            await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
           pet.customMedia = {
             type: file.type,
             name: file.name,
             size: file.size,
-            dataUrl: e.target.result
-          };
-          
+              mediaId
+            };
+          } else if (file.type.startsWith('image/')) {
+            const dataUrl = await compressImage(file, 1024, 0.8);
+            pet.customMedia = {
+              type: 'image/jpeg',
+              name: file.name,
+              size: dataUrl.length,
+              dataUrl
+            };
+          } else if (file.type.startsWith('video/')) {
+            const mediaId = `media-${uid()}`;
+            await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
+            pet.customMedia = {
+              type: file.type,
+              name: file.name,
+              size: file.size,
+              mediaId
+            };
+          } else {
+            alert('仅支持图片或视频文件');
+            return;
+          }
           pet.lastUpdated = nowMs();
           saveState(state);
           render();
-          
-          // 更新新建OC按钮的显示状态
           updateCreatePetButtonVisibility();
-          
+          // 保存新媒体后自动刷新页面，确保媒体资源（含IndexedDB）重新挂载
+          setTimeout(() => { location.reload(); }, 50);
           onCancel();
-        };
-        
-        reader.readAsDataURL(file);
-        return; // 等待文件读取完成
+        } catch (err) {
+          console.error('媒体保存失败:', err);
+          alert('媒体保存失败，请重试或更换文件');
+        }
+        return; // 已处理
       }
       
       pet.lastUpdated = nowMs();
@@ -1348,6 +1482,7 @@
         mediaInput.value = '';
         return;
       }
+      // 允许视频与图片，视频走IndexedDB持久化
       
       // 验证文件大小（限制为10MB）
       if (file.size > 10 * 1024 * 1024) {
@@ -1417,9 +1552,40 @@
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
+  
+  // 压缩图片，限制最大边为 512px，并压缩为 JPEG 质量 0.75，避免localStorage超限
+  function compressImage(file, maxDim = 512, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const scale = Math.min(1, maxDim / Math.max(width, height));
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(dataUrl);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   // 新建OC保存按钮事件
-  createPetSave.addEventListener('click', () => {
+  createPetSave.addEventListener('click', async () => {
     const name = createPetName.value.trim();
     const speciesWithEmoji = createPetSpecies.value;
     const stage = createPetStage.value.trim();
@@ -1458,38 +1624,56 @@
     
     // 如果有上传的文件，保存文件信息
     if (file) {
+      try {
+        if (file.type === 'image/gif') {
+          // GIF：存入 IndexedDB，保持动画
+          const mediaId = `media-${uid()}`;
+          await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
       newPet.customMedia = {
         type: file.type,
         name: file.name,
-        size: file.size
-      };
-      
-      // 将文件转换为Data URL并保存
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        newPet.customMedia.dataUrl = e.target.result;
-        
-        // 添加到OC列表
+            size: file.size,
+            mediaId
+          };
+        } else if (file.type.startsWith('image/')) {
+          // 其他图片压缩
+          const dataUrl = await compressImage(file, 512, 0.75);
+          newPet.customMedia = {
+            type: 'image/jpeg',
+            name: file.name,
+            size: dataUrl.length,
+            dataUrl
+          };
+        } else if (file.type.startsWith('video/')) {
+          // 视频：存入 IndexedDB
+          const mediaId = `media-${uid()}`;
+          await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
+          newPet.customMedia = {
+            type: file.type,
+            name: file.name,
+            size: file.size,
+            mediaId
+          };
+        } else {
+          alert('仅支持图片或视频文件');
+          return;
+        }
+      } catch (err) {
+        console.error('媒体保存失败:', err);
+        alert('媒体保存失败，请重试或更换文件');
+        return;
+      }
+      // 继续保存
         state.pets.push(newPet);
         state.selectedPetId = petId;
         saveState(state);
-        
-        // 关闭对话框
         createPetDialog.close();
         createPetDialog.removeAttribute('open');
-        
-        // 重新渲染
         render();
-        
-        // 更新新建OC按钮的显示状态
         updateCreatePetButtonVisibility();
-        
-        // 显示成功提示
-        alert(`OC"${name}"创建成功！`);
-      };
-      
-      reader.readAsDataURL(file);
-      return; // 等待文件读取完成
+        // 新建并包含媒体：保存后自动刷新，确保对象URL与视频自动播放策略就绪
+        setTimeout(() => { location.reload(); }, 50);
+      return;
     }
 
     // 没有文件时直接创建
