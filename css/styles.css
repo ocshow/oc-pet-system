@@ -668,12 +668,19 @@ body {
 
 .actions-bar .action-btn:hover .action-emoji { transform: scale(1.15); }
 
-#pet-stage-video,
 #pet-stage-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 18px 40px rgba(255, 134, 178, 0.35));
+}
+
+#pet-stage-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* 避免安卓夸克等浏览器对带滤镜的视频强制白底合成 */
+  filter: none !important;
 }
 
 /* 待机：轻微呼吸起伏（不依赖素材） */
@@ -696,9 +703,7 @@ body {
 }
 
 /* 视频加载时的样式 */
-#pet-stage-video:not([src]) {
-  /* 移除这个规则，让JavaScript控制显示/隐藏 */
-}
+#pet-stage-video:not([src]) { display: none; }
 
 /* 视频播放控制 */
 #pet-stage-video::-webkit-media-controls {
@@ -728,9 +733,7 @@ body {
 }
 
 /* 视频背景处理按钮样式 */
-#video-bg-btn {
-  /* 继承action-btn的样式 */
-}
+#video-bg-btn { display: inline-flex; }
 
 /* 不同的混合模式样式 */
 #pet-stage-video.video-bg-multiply,
