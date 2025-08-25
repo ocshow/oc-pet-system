@@ -605,6 +605,9 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(255, 134, 178, 0.15);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* 新增：OC容器下方的横向操作栏 */
@@ -699,6 +702,12 @@ body {
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 18px 40px rgba(255, 134, 178, 0.35));
+  position: relative;
+  z-index: 1;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 /* 待机：轻微呼吸起伏（不依赖素材） */
@@ -1385,6 +1394,8 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 2;
+  contain: layout paint;
 }
 
 .particle {
