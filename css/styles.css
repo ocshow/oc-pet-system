@@ -312,7 +312,8 @@ body {
   box-shadow: 0 8px 18px rgba(255, 134, 178, 0.25);
   font-size: 28px;
   text-align: center;
-  line-height: 1;
+  /* 让纯文字/emoji 在容器内完美垂直居中（图片不受影响） */
+  line-height: 48px;
 }
 
 /* 保证头像内图片也能严格居中且不被拉伸 */
