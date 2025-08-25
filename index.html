@@ -6,7 +6,7 @@
     <title></title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@500;600;700&family=ZCOOL+KuaiLe&family=VT323&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
@@ -174,6 +174,7 @@
                     <source id="pet-video-source" type="video/mp4">
                   </video>
                   <img id="pet-stage-image" alt="OC" />
+                  <div id="pet-subtitle" class="pet-subtitle" aria-live="polite"></div>
                 </div>
                 <div id="pet-effects" class="pet-effects" aria-hidden="true"></div>
               </div>
@@ -202,6 +203,9 @@
                   </button>
                 </div>
               </div>
+
+              <!-- 互动记录容器 -->
+              <div id="interaction-log" class="interaction-log" aria-label="互动记录"></div>
 
               <!-- 小游戏面板（默认隐藏，点击“玩耍”时作为浮层显示） -->
               <div id="play-panel" class="play-panel hidden" aria-labelledby="play-panel-title" style="position: relative;">
