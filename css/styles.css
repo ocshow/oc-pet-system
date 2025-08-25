@@ -11,10 +11,11 @@
   /* 口令输入界面样式 */
 .password-screen {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* Android/夸克等浏览器可视高度 */
+  min-height: 100svh; /* 兜底 */
   background:
     radial-gradient(1200px 800px at 20% -20%, rgba(255, 183, 220, 0.28), transparent),
     radial-gradient(1000px 700px at 120% 10%, rgba(165, 216, 255, 0.35), transparent),
@@ -60,7 +61,7 @@
   padding: 15px 18px;
   border: 2px dashed rgba(255, 134, 178, 0.35);
   border-radius: 14px;
-  font-size: 1rem;
+  font-size: 16px; /* 防止 Android 浏览器触发输入时放大/变形 */
   margin-bottom: 20px;
   transition: all 0.3s ease;
   background: #fff;
@@ -72,6 +73,17 @@
   border-color: var(--primary-strong);
   background: #fff;
   transform: translateY(-1px);
+}
+
+/* 统一 autofill 背景，去除黄色高亮 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  transition: background-color 5000s ease-in-out 0s;
+  box-shadow: 0 0 0px 1000px #fff inset;
 }
 
 .password-form button {
