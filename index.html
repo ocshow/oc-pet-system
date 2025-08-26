@@ -12,14 +12,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="OC小窝" />
     <meta name="msapplication-TileColor" content="#667eea" />
-    <meta name="msapplication-TileImage" content="assets/pet.svg" />
+    <meta name="msapplication-TileImage" content="./assets/kong.png" />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="./manifest.json" />
     
     <!-- PWA Icons -->
-    <link rel="icon" type="image/svg+xml" href="assets/pet.svg" />
-    <link rel="apple-touch-icon" href="assets/pal-001.png" />
+    <link rel="icon" type="image/svg+xml" href="./assets/kong.png" />
+    <link rel="apple-touch-icon" href="./assets/pal-001.png" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -497,7 +497,7 @@
       // 注册 Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
               console.log('Service Worker 注册成功:', registration);
               

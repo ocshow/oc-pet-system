@@ -2,12 +2,12 @@
   "name": "OC云台小窝",
   "short_name": "OC小窝",
   "description": "一个可爱的OC宠物养成系统，支持桌宠模式",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#667eea",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "scope": "./",
   "lang": "zh-CN",
   "icons": [
     {
@@ -43,7 +43,7 @@
       "name": "开启桌宠",
       "short_name": "桌宠",
       "description": "快速开启桌宠模式",
-      "url": "/?desktop-pet=true",
+      "url": "./?desktop-pet=true",
       "icons": [
         {
           "src": "assets/pet.svg",

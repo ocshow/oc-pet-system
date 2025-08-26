@@ -3677,5 +3677,140 @@
     }, 200);
   };
 
+  // ---------- 系统级画中画（Android Chrome 可用） ----------
+  let pipMirrorCanvas = null;
+  let pipMirrorCtx = null;
+  let pipMirrorVideo = null;
+  let pipMirrorAnimating = false;
+  let pipCleanup = null;
+
+  function getStageMediaElements() {
+    const stageVideo = document.getElementById('pet-stage-video');
+    const stageImg = document.getElementById('pet-stage-image');
+    return { stageVideo, stageImg };
+  }
+
+  function drawPiPLoop() {
+    if (!pipMirrorAnimating || !pipMirrorCanvas || !pipMirrorCtx) return;
+    const { stageVideo, stageImg } = getStageMediaElements();
+    const w = pipMirrorCanvas.width;
+    const h = pipMirrorCanvas.height;
+    pipMirrorCtx.clearRect(0, 0, w, h);
+
+    // 优先绘制视频，其次绘制图片
+    if (stageVideo && stageVideo.style.display !== 'none' && stageVideo.readyState >= 2) {
+      try { pipMirrorCtx.drawImage(stageVideo, 0, 0, w, h); } catch (_) {}
+    } else if (stageImg && stageImg.style.display !== 'none' && stageImg.complete) {
+      try { pipMirrorCtx.drawImage(stageImg, 0, 0, w, h); } catch (_) {}
+    }
+
+    requestAnimationFrame(drawPiPLoop);
+  }
+
+  async function startSystemPiP() {
+    // 仅在浏览器支持情况下启用
+    const pipSupported = document.pictureInPictureEnabled && typeof HTMLVideoElement !== 'undefined' && typeof HTMLVideoElement.prototype.requestPictureInPicture === 'function';
+    if (!pipSupported) {
+      return false;
+    }
+
+    // 准备镜像画布与隐藏video
+    if (!pipMirrorCanvas) {
+      pipMirrorCanvas = document.createElement('canvas');
+      // 以舞台视频/图片的尺寸为基准
+      const container = document.querySelector('.pet-media-container');
+      const rect = container ? container.getBoundingClientRect() : { width: 320, height: 240 };
+      pipMirrorCanvas.width = Math.max(160, Math.floor(rect.width)) || 320;
+      pipMirrorCanvas.height = Math.max(120, Math.floor(rect.height)) || 240;
+      pipMirrorCtx = pipMirrorCanvas.getContext('2d');
+    }
+
+    if (!pipMirrorVideo) {
+      pipMirrorVideo = document.createElement('video');
+      pipMirrorVideo.setAttribute('playsinline', '');
+      pipMirrorVideo.muted = true;
+      pipMirrorVideo.autoplay = true;
+      pipMirrorVideo.style.position = 'fixed';
+      pipMirrorVideo.style.width = '1px';
+      pipMirrorVideo.style.height = '1px';
+      pipMirrorVideo.style.opacity = '0';
+      pipMirrorVideo.style.pointerEvents = 'none';
+      document.body.appendChild(pipMirrorVideo);
+    }
+
+    // 将canvas作为MediaStream源
+    const stream = pipMirrorCanvas.captureStream ? pipMirrorCanvas.captureStream(30) : null;
+    if (!stream) {
+      return false;
+    }
+    pipMirrorVideo.srcObject = stream;
+    try { await pipMirrorVideo.play(); } catch (_) {}
+
+    // 启动绘制循环
+    pipMirrorAnimating = true;
+    drawPiPLoop();
+
+    // 请求系统级画中画
+    try {
+      await pipMirrorVideo.requestPictureInPicture();
+    } catch (err) {
+      // 请求失败时停止循环
+      pipMirrorAnimating = false;
+      return false;
+    }
+
+    // 离开PiP时清理
+    const onLeave = () => {
+      stopSystemPiP();
+      document.removeEventListener('leavepictureinpicture', onLeave);
+    };
+    document.addEventListener('leavepictureinpicture', onLeave, { once: true });
+
+    // 清理函数
+    pipCleanup = () => {
+      pipMirrorAnimating = false;
+      if (pipMirrorVideo) {
+        try { pipMirrorVideo.pause(); } catch (_) {}
+        pipMirrorVideo.srcObject = null;
+        if (pipMirrorVideo.parentNode) pipMirrorVideo.parentNode.removeChild(pipMirrorVideo);
+        pipMirrorVideo = null;
+      }
+      pipMirrorCanvas = null;
+      pipMirrorCtx = null;
+    };
+
+    return true;
+  }
+
+  function stopSystemPiP() {
+    pipMirrorAnimating = false;
+    if (document.pictureInPictureElement) {
+      try { document.exitPictureInPicture(); } catch (_) {}
+    }
+    if (typeof pipCleanup === 'function') {
+      pipCleanup();
+      pipCleanup = null;
+    }
+  }
+
+  function isSystemPiPSupported() {
+    return !!(document.pictureInPictureEnabled && typeof HTMLVideoElement !== 'undefined' && typeof HTMLVideoElement.prototype.requestPictureInPicture === 'function');
+  }
+
+  // 改造原有"画中画"按钮：优先系统PiP，否则回退到页面内小窗
+  if (desktopPetPip) {
+    desktopPetPip.addEventListener('click', async () => {
+      if (isSystemPiPSupported()) {
+        const ok = await startSystemPiP();
+        if (!ok) {
+          // 回退到旧的页面内PiP容器
+          if (isPipActive) { stopPipMode(); } else { startPipMode(); }
+        }
+      } else {
+        if (isPipActive) { stopPipMode(); } else { startPipMode(); }
+      }
+    });
+  }
+
 })();
 

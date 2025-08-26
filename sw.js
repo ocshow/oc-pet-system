@@ -1,17 +1,17 @@
 // Service Worker for OC云台小窝 PWA
 const CACHE_NAME = 'oc-pet-system-v1.7';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/assets/pet.svg',
-  '/assets/pal-001.png',
-  '/assets/pal-001.webm',
-  '/assets/pal-002.webm',
-  '/assets/pal-003.webm',
-  '/assets/pal-004.webm',
-  '/assets/kong.png'
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/app.js',
+  './assets/pet.svg',
+  './assets/pal-001.png',
+  './assets/pal-001.webm',
+  './assets/pal-002.webm',
+  './assets/pal-003.webm',
+  './assets/pal-004.webm',
+  './assets/kong.png'
 ];
 
 // 安装事件 - 缓存资源
@@ -94,7 +94,7 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // 网络请求失败时，尝试返回离线页面
             if (event.request.destination === 'document') {
-              return caches.match('/index.html');
+              return caches.match('./index.html');
             }
           });
       })
@@ -121,8 +121,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body || '你的OC想你了！',
-      icon: '/assets/pet.svg',
-      badge: '/assets/pet.svg',
+      icon: './assets/pet.svg',
+      badge: './assets/pet.svg',
       tag: 'oc-pet-notification',
       requireInteraction: true,
       actions: [
@@ -151,7 +151,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'open') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow('./')
     );
   }
 });
