@@ -754,6 +754,12 @@ body {
   transition: all 0.3s ease;
 }
 
+/* 确保图片始终在视频之上并保持透明 */
+#pet-stage-image {
+  z-index: 2;
+  background: transparent !important;
+}
+
 /* 视频加载时的样式 */
 #pet-stage-video:not([src]) { display: none; }
 
@@ -2460,4 +2466,20 @@ datalist option:not(:last-child) {
   }
 }
 
+/* 让OC图片保持透明背景显示 */
+.pet-media-container {
+  background-color: transparent !important;
+}
 
+#pet-stage-image {
+  background-color: transparent !important;
+  image-rendering: auto;
+  object-fit: contain; /* 避免被裁切时露出底色 */
+}
+
+/* 如果有其他展示图片元素，也保持透明 */
+.desktop-pet-media img,
+.pip-content img {
+  background-color: transparent !important;
+  object-fit: contain;
+}

@@ -1408,7 +1408,7 @@
           } else if (file.type.startsWith('image/')) {
             const dataUrl = await compressImage(file, 1024, 0.8);
             pet.customMedia = {
-              type: 'image/jpeg',
+              type: /png$/i.test(file.type) ? 'image/png' : 'image/jpeg',
               name: file.name,
               size: dataUrl.length,
               dataUrl
@@ -1562,7 +1562,7 @@
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
   
-  // 压缩图片，限制最大边为 512px，并压缩为 JPEG 质量 0.75，避免localStorage超限
+  // 压缩图片，限制最大边为 maxDim，PNG保留透明，JPG按质量压缩
   function compressImage(file, maxDim = 512, quality = 0.75) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1577,9 +1577,13 @@
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
+          // 确保透明背景
+          ctx.clearRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
           try {
-            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            const isPng = /png$/i.test(file.type || '');
+            const mime = isPng ? 'image/png' : 'image/jpeg';
+            const dataUrl = canvas.toDataURL(mime, isPng ? undefined : quality);
             resolve(dataUrl);
           } catch (err) {
             reject(err);
@@ -1645,10 +1649,10 @@
             mediaId
           };
         } else if (file.type.startsWith('image/')) {
-          // 其他图片压缩
+          // 其他图片压缩，PNG保留透明
           const dataUrl = await compressImage(file, 512, 0.75);
           newPet.customMedia = {
-            type: 'image/jpeg',
+            type: /png$/i.test(file.type) ? 'image/png' : 'image/jpeg',
             name: file.name,
             size: dataUrl.length,
             dataUrl
