@@ -1,0 +1,17 @@
+{
+  "name": "oc云台小窝",
+  "short_name": "OC小窝",
+  "start_url": ".",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#ff86b2",
+  "background_color": "#fff7fb",
+  "description": "在手机桌面一键进入 OC 小窝，离线可用。",
+  "lang": "zh-CN",
+  "dir": "ltr"
+  ,
+  "icons": [
+    { "src": "assets/pal-001.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/pal-001.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

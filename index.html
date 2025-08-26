@@ -3,25 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OC云台小窝</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="description" content="一个可爱的OC宠物养成系统，支持桌宠模式" />
-    <meta name="theme-color" content="#667eea" />
+    <meta name="theme-color" content="#ff86b2" />
+    <title></title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/pal-001.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="OC小窝" />
-    <meta name="msapplication-TileColor" content="#667eea" />
-    <meta name="msapplication-TileImage" content="./assets/kong.png" />
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="./manifest.json" />
-    
-    <!-- PWA Icons -->
-    <link rel="icon" type="image/svg+xml" href="./assets/kong.png" />
-    <link rel="apple-touch-icon" href="./assets/pal-001.png" />
-    
-    <!-- Fonts -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@500;600;700&family=ZCOOL+KuaiLe&family=VT323&display=swap" rel="stylesheet" />
@@ -214,10 +201,6 @@
                   <button id="play-btn" class="btn action-btn">
                     <span class="action-emoji">🪀</span>
                     <span class="action-text">玩耍</span>
-                  </button>
-                  <button id="desktop-pet-btn" class="btn action-btn" title="开启桌宠模式">
-                    <span class="action-emoji">🖥️</span>
-                    <span class="action-text">桌宠</span>
                   </button>
                   <button id="video-bg-btn" class="btn action-btn" title="切换光影处理模式" style="display: none;">
                     <span class="action-emoji">🎨</span>
@@ -425,181 +408,7 @@
 
     </div>
 
-    <!-- 桌宠模式悬浮窗 -->
-    <div id="desktop-pet-window" class="desktop-pet-window hidden" draggable="true">
-      <div class="desktop-pet-header">
-        <span class="desktop-pet-title">桌宠模式</span>
-        <div class="desktop-pet-controls">
-          <button id="desktop-pet-pip" class="desktop-pet-btn" title="画中画模式">📺</button>
-          <button id="desktop-pet-minimize" class="desktop-pet-btn" title="最小化">➖</button>
-          <button id="desktop-pet-close" class="desktop-pet-btn" title="关闭桌宠">✕</button>
-        </div>
-      </div>
-      <div class="desktop-pet-content">
-        <div class="desktop-pet-media">
-          <video id="desktop-pet-video" autoplay muted loop playsinline>
-            <source id="desktop-pet-video-source" type="video/mp4">
-          </video>
-          <img id="desktop-pet-image" alt="桌宠OC" />
-        </div>
-        <div class="desktop-pet-subtitle" id="desktop-pet-subtitle"></div>
-      </div>
-    </div>
-
-    <!-- 画中画模式容器 -->
-    <div id="pip-container" class="pip-container hidden">
-      <div class="pip-header">
-        <span class="pip-title">画中画模式</span>
-        <button id="pip-close" class="pip-close-btn">✕</button>
-      </div>
-      <div class="pip-content">
-        <video id="pip-video" autoplay muted loop playsinline controls>
-          <source id="pip-video-source" type="video/mp4">
-        </video>
-        <img id="pip-image" alt="画中画OC" />
-      </div>
-    </div>
-
-    <!-- PWA 安装提示 -->
-    <div id="pwa-install-prompt" class="pwa-install-prompt hidden">
-      <div class="pwa-install-content">
-        <div class="pwa-install-icon">📱</div>
-        <div class="pwa-install-text">
-          <h3>安装OC云台小窝</h3>
-          <p>将应用安装到桌面，享受更好的体验！</p>
-        </div>
-        <div class="pwa-install-actions">
-          <button id="pwa-install-btn" class="btn btn-primary">安装</button>
-          <button id="pwa-install-dismiss" class="btn btn-secondary">稍后</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- PWA 更新提示 -->
-    <div id="pwa-update-prompt" class="pwa-update-prompt hidden">
-      <div class="pwa-update-content">
-        <div class="pwa-update-icon">🔄</div>
-        <div class="pwa-update-text">
-          <h3>应用更新可用</h3>
-          <p>新版本已准备就绪，点击更新！</p>
-        </div>
-        <div class="pwa-update-actions">
-          <button id="pwa-update-btn" class="btn btn-primary">更新</button>
-          <button id="pwa-update-dismiss" class="btn btn-secondary">稍后</button>
-        </div>
-      </div>
-    </div>
-
     <script src="js/app.js"></script>
-    
-    <!-- PWA Service Worker 注册 -->
-    <script>
-      // 注册 Service Worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then((registration) => {
-              console.log('Service Worker 注册成功:', registration);
-              
-              // 检查更新
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // 显示更新提示
-                    showPWAUpdatePrompt(registration);
-                  }
-                });
-              });
-            })
-            .catch((error) => {
-              console.log('Service Worker 注册失败:', error);
-            });
-        });
-      }
-
-      // 显示PWA安装提示
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        showPWAInstallPrompt();
-      });
-
-      // 显示安装提示
-      function showPWAInstallPrompt() {
-        const prompt = document.getElementById('pwa-install-prompt');
-        if (prompt) {
-          prompt.classList.remove('hidden');
-        }
-      }
-
-      // 显示更新提示
-      function showPWAUpdatePrompt(registration) {
-        const prompt = document.getElementById('pwa-update-prompt');
-        if (prompt) {
-          prompt.classList.remove('hidden');
-          
-          // 更新按钮事件
-          const updateBtn = document.getElementById('pwa-update-btn');
-          if (updateBtn) {
-            updateBtn.addEventListener('click', () => {
-              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-              window.location.reload();
-            });
-          }
-        }
-      }
-
-      // 安装按钮事件
-      document.addEventListener('DOMContentLoaded', () => {
-        const installBtn = document.getElementById('pwa-install-btn');
-        const installDismiss = document.getElementById('pwa-install-dismiss');
-        const updateBtn = document.getElementById('pwa-update-btn');
-        const updateDismiss = document.getElementById('pwa-update-dismiss');
-
-        if (installBtn) {
-          installBtn.addEventListener('click', () => {
-            if (deferredPrompt) {
-              deferredPrompt.prompt();
-              deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                  console.log('用户接受安装');
-                } else {
-                  console.log('用户拒绝安装');
-                }
-                deferredPrompt = null;
-                hidePWAInstallPrompt();
-              });
-            }
-          });
-        }
-
-        if (installDismiss) {
-          installDismiss.addEventListener('click', hidePWAInstallPrompt);
-        }
-
-        if (updateDismiss) {
-          updateDismiss.addEventListener('click', () => {
-            document.getElementById('pwa-update-prompt').classList.add('hidden');
-          });
-        }
-      });
-
-      function hidePWAInstallPrompt() {
-        const prompt = document.getElementById('pwa-install-prompt');
-        if (prompt) {
-          prompt.classList.add('hidden');
-        }
-      }
-
-      // 检查是否已安装为PWA
-      if (window.matchMedia('(display-mode: standalone)').matches || 
-          window.navigator.standalone === true) {
-        console.log('应用已安装为PWA');
-        document.body.classList.add('pwa-installed');
-      }
-    </script>
   </body>
   </html>
 

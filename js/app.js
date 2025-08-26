@@ -2,6 +2,14 @@
   'use strict';
 
   // ---------- Utilities ----------
+  // PWA: 注册 Service Worker
+  try {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  } catch (_) {}
   // 临时禁用升级/成长
   // const LEVELING_DISABLED = true; // 移除
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -1391,46 +1399,46 @@
           if (file.type === 'image/gif') {
             const mediaId = `media-${uid()}`;
             await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
-      newPet.customMedia = {
-        type: file.type,
-        name: file.name,
-            size: file.size,
-            mediaId
-          };
-        } else if (file.type.startsWith('image/')) {
-          const dataUrl = await compressImage(file, 1024, 0.8);
-          pet.customMedia = {
-            type: 'image/jpeg',
-            name: file.name,
-            size: dataUrl.length,
-            dataUrl
-          };
-        } else if (file.type.startsWith('video/')) {
-          const mediaId = `media-${uid()}`;
-          await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
           pet.customMedia = {
             type: file.type,
             name: file.name,
             size: file.size,
-            mediaId
-          };
-        } else {
-          alert('仅支持图片或视频文件');
-          return;
+              mediaId
+            };
+          } else if (file.type.startsWith('image/')) {
+            const dataUrl = await compressImage(file, 1024, 0.8);
+            pet.customMedia = {
+              type: 'image/jpeg',
+              name: file.name,
+              size: dataUrl.length,
+              dataUrl
+            };
+          } else if (file.type.startsWith('video/')) {
+            const mediaId = `media-${uid()}`;
+            await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
+            pet.customMedia = {
+              type: file.type,
+              name: file.name,
+              size: file.size,
+              mediaId
+            };
+          } else {
+            alert('仅支持图片或视频文件');
+            return;
+          }
+          pet.lastUpdated = nowMs();
+          saveState(state);
+          render();
+          updateCreatePetButtonVisibility();
+          // 保存新媒体后自动刷新页面，确保媒体资源（含IndexedDB）重新挂载
+          setTimeout(() => { location.reload(); }, 50);
+          onCancel();
+        } catch (err) {
+          console.error('媒体保存失败:', err);
+          alert('媒体保存失败，请重试或更换文件');
         }
-        pet.lastUpdated = nowMs();
-        saveState(state);
-        render();
-        updateCreatePetButtonVisibility();
-        // 保存新媒体后自动刷新页面，确保媒体资源（含IndexedDB）重新挂载
-        setTimeout(() => { location.reload(); }, 50);
-        onCancel();
-      } catch (err) {
-        console.error('媒体保存失败:', err);
-        alert('媒体保存失败，请重试或更换文件');
+        return; // 已处理
       }
-      return; // 已处理
-    }
       
       pet.lastUpdated = nowMs();
       saveState(state);
@@ -2057,30 +2065,30 @@
 
   // 海龟汤（故事+提示+答案）- 加强趣味与推理深度
   const SOUPS = [
-    { s: '一个人推着小车走到"酒店"门口，被老板罚了钱，却开心地继续前进。为什么？', h: '不是现实中的酒店', a: '桌游《大富翁/Monopoly》，走到宾馆格子需要交费。' },
+    { s: '一个人推着小车走到“酒店”门口，被老板罚了钱，却开心地继续前进。为什么？', h: '不是现实中的酒店', a: '桌游《大富翁/Monopoly》，走到宾馆格子需要交费。' },
     { s: '大雨天，一位行人没打伞，衣服被淋湿，但头发却一点没湿。为什么？', h: '与发型有关', a: '他是光头。' },
-    { s: '女孩每晚都把"太阳"关掉再睡觉。为什么？', h: '不是天上的太阳', a: '她把房间里名为"太阳"的小夜灯关掉。' },
-    { s: '他每天都"飞"去上班，却从不坐飞机。为什么？', h: '字面"双关"', a: '他骑共享单车，车名叫"飞什么"的品牌/或地铁"飞站"（跳停）线路。' },
-    { s: '一栋楼的电梯总显示"下行"，住户却从没抱怨。为什么？', h: '位置相关', a: '这是山顶观景电梯，只有下行开放供游客回到山脚。' },
-    { s: '作家完成新书后第一件事是把书"淹了"。为什么？', h: '物理意义改变', a: '把书交给出版社的"版面海（版海）"，或把U盘放进"云端（谐音云/淹）"备份。' },
+    { s: '女孩每晚都把“太阳”关掉再睡觉。为什么？', h: '不是天上的太阳', a: '她把房间里名为“太阳”的小夜灯关掉。' },
+    { s: '他每天都“飞”去上班，却从不坐飞机。为什么？', h: '字面“双关”', a: '他骑共享单车，车名叫“飞什么”的品牌/或地铁“飞站”（跳停）线路。' },
+    { s: '一栋楼的电梯总显示“下行”，住户却从没抱怨。为什么？', h: '位置相关', a: '这是山顶观景电梯，只有下行开放供游客回到山脚。' },
+    { s: '作家完成新书后第一件事是把书“淹了”。为什么？', h: '物理意义改变', a: '把书交给出版社的“版面海（版海）”，或把U盘放进“云端（谐音云/淹）”备份。' },
     { s: '她在雨中举着一把没有伞柄的伞，却没有被淋湿。为什么？', h: '伞不是伞', a: '她打的是阳伞/遮阳棚边上的伞布，或在公交站的伞形顶棚下。' },
-    { s: '画家把"夜"画得很亮。为什么？', h: '工具或环境', a: '他用的是夜光颜料/或在白天画夜景。' },
-    { s: '男子路过照相馆时突然快走，进门后却慢了下来。为什么？', h: '"快""慢"不是速度', a: '他把相机的快门速度从"快门"调成"慢门"。' },
-    { s: '她买下一张"时间"，把它贴在冰箱上。为什么？', h: '不是抽象时间', a: '买的是"日程表/日历"，贴冰箱上提醒安排。' },
-    { s: '老师让全班把"错误"写在纸上，结果大家都对了。为什么？', h: '字面游戏', a: '让大家写下"错误"两个字，写对了就对。' },
-    { s: '他把手机调到"飞行模式"，却让朋友顺利到达。为什么？', h: '不是手机的飞行', a: '他把无人机的遥控调到飞行模式，帮朋友空投物品/指路。' },
-    { s: '建筑师在图纸上"开了一扇窗"，房间立刻亮了。为什么？', h: '现场与图纸联动', a: '这是智能建模/灯光联动的展示厅，图纸上的操作同步控制样板间灯光。' },
-    { s: '每天清晨，他都在同一地点看"日落"。为什么？', h: '方位错觉', a: '他面对的是玻璃幕墙，看到的"日落"是对面大屏或反射的日落视频。' },
-    { s: '她把一张纸对折十次，成功"到达月球"。为什么？', h: '不是物理对折', a: '她在玩科普计算题：理论上对折到一定次数厚度可达月球；或她打开了AR科普APP的"到月球"成就。' },
-    { s: '球迷比赛当天"看台上没有一个人"，但座位却坐满了。为什么？', h: '措辞陷阱', a: '没有"一个人"，因为都是两个人、三个人……看台并非空无一人。' },
-    { s: '他把"声音"装进了瓶子里。为什么？', h: '并非真的装进', a: '他在做ASMR/录音，用瓶子作为共鸣腔录制音效。' },
+    { s: '画家把“夜”画得很亮。为什么？', h: '工具或环境', a: '他用的是夜光颜料/或在白天画夜景。' },
+    { s: '男子路过照相馆时突然快走，进门后却慢了下来。为什么？', h: '“快”“慢”不是速度', a: '他把相机的快门速度从“快门”调成“慢门”。' },
+    { s: '她买下一张“时间”，把它贴在冰箱上。为什么？', h: '不是抽象时间', a: '买的是“日程表/日历”，贴冰箱上提醒安排。' },
+    { s: '老师让全班把“错误”写在纸上，结果大家都对了。为什么？', h: '字面游戏', a: '让大家写下“错误”两个字，写对了就对。' },
+    { s: '他把手机调到“飞行模式”，却让朋友顺利到达。为什么？', h: '不是手机的飞行', a: '他把无人机的遥控调到飞行模式，帮朋友空投物品/指路。' },
+    { s: '建筑师在图纸上“开了一扇窗”，房间立刻亮了。为什么？', h: '现场与图纸联动', a: '这是智能建模/灯光联动的展示厅，图纸上的操作同步控制样板间灯光。' },
+    { s: '每天清晨，他都在同一地点看“日落”。为什么？', h: '方位错觉', a: '他面对的是玻璃幕墙，看到的“日落”是对面大屏或反射的日落视频。' },
+    { s: '她把一张纸对折十次，成功“到达月球”。为什么？', h: '不是物理对折', a: '她在玩科普计算题：理论上对折到一定次数厚度可达月球；或她打开了AR科普APP的“到月球”成就。' },
+    { s: '球迷比赛当天“看台上没有一个人”，但座位却坐满了。为什么？', h: '措辞陷阱', a: '没有“一个人”，因为都是两个人、三个人……看台并非空无一人。' },
+    { s: '他把“声音”装进了瓶子里。为什么？', h: '并非真的装进', a: '他在做ASMR/录音，用瓶子作为共鸣腔录制音效。' },
     { s: '一位厨师把盐放到甜点里，客人却说更甜了。为什么？', h: '味觉原理', a: '少量盐可以抑制苦味，突出甜味。' },
     { s: '她买了一张没有座位号的票，却坐到了第一排。为什么？', h: '票的类型', a: '买的是展览/音乐节草地票，早到先到先得坐在最前。' },
-    { s: '他给植物听"无声"的音乐，长得更好了。为什么？', h: '音乐并非一定要有声', a: '他用的是震动/超声频段或节律性灌溉定时器。' },
+    { s: '他给植物听“无声”的音乐，长得更好了。为什么？', h: '音乐并非一定要有声', a: '他用的是震动/超声频段或节律性灌溉定时器。' },
     { s: '邮差每天把信送到同一扇门，但门从没开过。为什么？', h: '门的位置', a: '那是信箱门/信报箱。' },
     { s: '她把书翻到最后一页，合上，又从第一页开始读。为什么？', h: '不是偷看结局', a: '在检查是否缺页/确认印刷分页完整后才开始阅读。' },
-    { s: '他给朋友发了一个空白消息，朋友却立刻明白了意思。为什么？', h: '约定俗成', a: '他们约定"空白"代表平安/到家。' },
-    { s: '夜里停电，他把"星星"点亮了。为什么？', h: '星星不在天上', a: '家里的星星投影灯/夜光贴被点亮。' }
+    { s: '他给朋友发了一个空白消息，朋友却立刻明白了意思。为什么？', h: '约定俗成', a: '他们约定“空白”代表平安/到家。' },
+    { s: '夜里停电，他把“星星”点亮了。为什么？', h: '星星不在天上', a: '家里的星星投影灯/夜光贴被点亮。' }
   ];
   let soupIndex = 0;
   function initSoup() {
@@ -2447,7 +2455,7 @@
     const rect = stageEl.getBoundingClientRect();
     // 数量更大、更密集
     const count = kind === 'clean' ? 48 : (kind === 'feed' ? 40 : 32);
-    // 使用二维网格+抖动，做"满天星"分布
+    // 使用二维网格+抖动，做“满天星”分布
     const rows = Math.max(1, Math.round(Math.sqrt(count)));
     const cols = Math.max(1, Math.ceil(count / rows));
     const cellW = rect.width / cols;
@@ -2706,7 +2714,7 @@
     '世界偶尔很糟糕，但你让我觉得温暖～ (｡･ω･｡)ﾉ♡',
     '抱抱你，乌云总会散开的！ (っ´▽｀)っ',
     '嘿嘿，偷偷告诉你——其实我最喜欢你啦！ (｡•̀ᴗ-)✧',
-    '猜猜我在想什么？——是"想见你"！ (◕‿◕✿)',
+    '猜猜我在想什么？——是“想见你”！ (◕‿◕✿)',
     '再不理我，我就要闹了哦！ (｀ε´)',
     '叮咚！你收到了一只快乐小狗，请签收～ 🐶(＾▽＾)',
     '今天不夸我可爱的话，我就……就哭给你看！ (╥﹏╥)',
@@ -2740,8 +2748,8 @@
     '警告！检测到主人电量不足，快充电！（塞零食） (｀・ω・´)',
     '必杀技——无敌抱抱拳！ (っ´▽｀)っ',
     '紧急通知！你被逮捕了，罪名是……太可爱！ (｀ε´)',
-    '如果我是冰淇淋，那一定是你的"最喜欢"口味！ 🍦(｡♥‿♥｡)',
-    '叮！系统提示：今日份的"喜欢你"已送达～ (๑˃̵ᴗ˂̵)و',
+    '如果我是冰淇淋，那一定是你的“最喜欢”口味！ 🍦(｡♥‿♥｡)',
+    '叮！系统提示：今日份的“喜欢你”已送达～ (๑˃̵ᴗ˂̵)و',
     '我是小怪兽，但只想被你驯服～ 🦖(◕‿◕✿)',
     '警告！你的可爱度超标，需要我亲亲才能解决！ ( ˘ ³˘)♥',
     '即使全世界否定你，我也会站在你这边！♡ (｡♡‿♡｡)',
@@ -2776,7 +2784,7 @@
     const time = `${hh}:${mm}`;
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     const petName = pet?.name || '小OC';
-    const safeName = String(petName).replace(/["""'\u201C\u201D]/g, '');
+    const safeName = String(petName).replace(/[“”"'\u201C\u201D]/g, '');
 
     // 将直白文案转为可爱语气，并带上名字
     let cute = message;
@@ -2919,1101 +2927,5 @@
       location.reload();
     });
   }
-
-  // ---------- 桌宠模式功能 ----------
-  
-  // 通知提示函数
-  function showNotification(message, type = 'info') {
-    // 创建通知元素
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    
-    // 添加样式
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${type === 'success' ? '#4caf50' : type === 'warning' ? '#ff9800' : type === 'error' ? '#f44336' : '#2196f3'};
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 10002;
-      font-size: 14px;
-      font-weight: 500;
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
-      max-width: 300px;
-      word-wrap: break-word;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // 显示动画
-    setTimeout(() => {
-      notification.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // 自动隐藏
-    setTimeout(() => {
-      notification.style.transform = 'translateX(100%)';
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 300);
-    }, 3000);
-  }
-  
-  // 桌宠模式相关元素
-  const desktopPetBtn = document.getElementById('desktop-pet-btn');
-  const desktopPetWindow = document.getElementById('desktop-pet-window');
-  const desktopPetVideo = document.getElementById('desktop-pet-video');
-  const desktopPetImage = document.getElementById('desktop-pet-image');
-  const desktopPetSubtitle = document.getElementById('desktop-pet-subtitle');
-  const desktopPetPip = document.getElementById('desktop-pet-pip');
-  const desktopPetMinimize = document.getElementById('desktop-pet-minimize');
-  const desktopPetClose = document.getElementById('desktop-pet-close');
-  const pipContainer = document.getElementById('pip-container');
-  const pipVideo = document.getElementById('pip-video');
-  const pipImage = document.getElementById('pip-image');
-  const pipClose = document.getElementById('pip-close');
-
-  // 调试信息
-  console.log('桌宠模式元素获取状态:', {
-    desktopPetBtn: !!desktopPetBtn,
-    desktopPetWindow: !!desktopPetWindow,
-    desktopPetVideo: !!desktopPetVideo,
-    desktopPetImage: !!desktopPetImage,
-    desktopPetSubtitle: !!desktopPetSubtitle
-  });
-
-  // 桌宠模式状态
-  let isDesktopPetActive = false;
-  let isPipActive = false;
-  let isMinimized = false;
-
-  // 开启桌宠模式
-  function startDesktopPetMode() {
-    console.log('尝试开启桌宠模式...');
-    
-    if (!state.selectedPetId) {
-      console.log('没有选中的OC');
-      showNotification('请先选择一个OC', 'warning');
-      return;
-    }
-
-    const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-    if (!selectedPet) {
-      console.log('OC信息获取失败');
-      showNotification('OC信息获取失败', 'error');
-      return;
-    }
-
-    console.log('选中的OC:', selectedPet);
-    console.log('桌宠窗口元素:', desktopPetWindow);
-    console.log('桌宠视频元素:', desktopPetVideo);
-    console.log('桌宠图片元素:', desktopPetImage);
-
-    // 同步媒体内容到桌宠窗口
-    syncMediaToDesktopPet(selectedPet);
-    
-    // 设置OC切换监听器
-    setupDesktopPetSync();
-    
-    // 启用PWA桌宠增强功能
-    setupPWADesktopPet();
-    
-    // 显示桌宠窗口
-    if (desktopPetWindow) {
-      desktopPetWindow.classList.remove('hidden');
-      console.log('桌宠窗口已显示');
-    } else {
-      console.error('桌宠窗口元素未找到');
-    }
-    
-    isDesktopPetActive = true;
-    
-    // 更新按钮状态
-    if (desktopPetBtn) {
-      desktopPetBtn.innerHTML = '<span class="action-emoji">🖥️</span><span class="action-text">关闭桌宠</span>';
-      desktopPetBtn.title = '关闭桌宠模式';
-    }
-    
-    showNotification('桌宠模式已开启', 'success');
-    console.log('桌宠模式开启完成');
-  }
-
-  // 关闭桌宠模式
-  function stopDesktopPetMode() {
-    desktopPetWindow.classList.add('hidden');
-    pipContainer.classList.add('hidden');
-    isDesktopPetActive = false;
-    isPipActive = false;
-    isMinimized = false;
-    
-    // 重置窗口状态
-    desktopPetWindow.classList.remove('minimized');
-    
-    // 更新按钮状态
-    desktopPetBtn.innerHTML = '<span class="action-emoji">🖥️</span><span class="action-text">桌宠</span>';
-    desktopPetBtn.title = '开启桌宠模式';
-    
-    showNotification('桌宠模式已关闭', 'info');
-  }
-
-  // 同步媒体到桌宠窗口 - 使用与主界面相同的逻辑
-  function syncMediaToDesktopPet(pet) {
-    console.log('开始同步媒体到桌宠窗口:', pet);
-    
-    // 检查媒体元素是否存在
-    if (!desktopPetVideo || !desktopPetImage) {
-      console.error('桌宠媒体元素未找到:', { desktopPetVideo, desktopPetImage });
-      return;
-    }
-    
-    // 使用与主界面相同的媒体加载逻辑
-    if (pet.customMedia && (pet.customMedia.dataUrl || pet.customMedia.mediaId)) {
-      const useCustomMedia = async () => {
-        try {
-          let srcUrl = pet.customMedia.dataUrl || '';
-          let mime = pet.customMedia.type || '';
-          
-          if (!srcUrl && pet.customMedia.mediaId) {
-            // 从IndexedDB读取并创建objectURL
-            const rec = await idbGetMedia(pet.customMedia.mediaId);
-            if (rec && rec.blob) {
-              if (objectUrlCache && objectUrlCache.has(pet.customMedia.mediaId)) {
-                srcUrl = objectUrlCache.get(pet.customMedia.mediaId);
-              } else {
-                srcUrl = URL.createObjectURL(rec.blob);
-                if (objectUrlCache) {
-                  objectUrlCache.set(pet.customMedia.mediaId, srcUrl);
-                }
-              }
-              mime = rec.blob.type || mime;
-            }
-          }
-          
-          const isVideo = mime.startsWith('video/');
-          const isGif = mime === 'image/gif' || (/\.gif(\?|$)/i.test(srcUrl));
-          
-          if (isVideo) {
-            console.log('桌宠模式加载视频:', srcUrl);
-            // 配置视频属性
-            while (desktopPetVideo.firstChild) {
-              desktopPetVideo.removeChild(desktopPetVideo.firstChild);
-            }
-            const source = document.createElement('source');
-            source.src = srcUrl;
-            source.type = mime || 'video/mp4';
-            desktopPetVideo.appendChild(source);
-            
-            desktopPetVideo.muted = true;
-            desktopPetVideo.setAttribute('muted', '');
-            desktopPetVideo.playsInline = true;
-            desktopPetVideo.setAttribute('playsinline', '');
-            desktopPetVideo.setAttribute('webkit-playsinline', '');
-            desktopPetVideo.autoplay = true;
-            desktopPetVideo.loop = true;
-            
-            // 显示视频，隐藏图片
-            desktopPetVideo.style.display = 'block';
-            desktopPetImage.style.display = 'none';
-            
-            // 加载和播放视频
-            desktopPetVideo.onloadeddata = () => {
-              console.log('桌宠视频加载成功');
-              desktopPetVideo.play().catch((e) => {
-                console.log('桌宠视频自动播放失败，将在用户交互时播放:', e);
-              });
-            };
-            desktopPetVideo.onerror = (e) => {
-              console.error('桌宠视频加载失败:', e);
-              // 失败时显示图片
-              desktopPetVideo.style.display = 'none';
-              desktopPetImage.style.display = 'block';
-              desktopPetImage.src = 'assets/kong.png';
-            };
-            
-            desktopPetVideo.load();
-            
-          } else if (isGif) {
-            // GIF：直接作为img展示
-            console.log('桌宠模式加载GIF:', srcUrl);
-            desktopPetVideo.style.display = 'none';
-            desktopPetImage.style.display = 'block';
-            desktopPetImage.src = srcUrl;
-            desktopPetImage.alt = pet.name;
-          } else {
-            // 普通图片
-            console.log('桌宠模式加载图片:', srcUrl);
-            desktopPetVideo.style.display = 'none';
-            desktopPetImage.style.display = 'block';
-            desktopPetImage.src = srcUrl;
-            desktopPetImage.alt = pet.name;
-          }
-        } catch (err) {
-          console.error('桌宠模式加载自定义媒体失败:', err);
-          // 失败时显示默认图片
-          desktopPetVideo.style.display = 'none';
-          desktopPetImage.style.display = 'block';
-          desktopPetImage.src = 'assets/pal-001.png';
-        }
-      };
-      
-      useCustomMedia();
-    } else {
-      // 预设OC媒体处理 - 与主界面保持一致
-      console.log('桌宠模式处理预设OC媒体:', pet.id);
-      
-      // 检查是否为预设OC
-      if (pet.id.startsWith('pal-')) {
-        // 预设OC使用对应的媒体文件
-        const mediaFile = `assets/${pet.id}.webm`;
-        console.log('桌宠模式加载预设OC视频:', mediaFile);
-        
-        // 配置视频属性
-        while (desktopPetVideo.firstChild) {
-          desktopPetVideo.removeChild(desktopPetVideo.firstChild);
-        }
-        const source = document.createElement('source');
-        source.src = mediaFile;
-        source.type = 'video/webm';
-        desktopPetVideo.appendChild(source);
-        
-        desktopPetVideo.muted = true;
-        desktopPetVideo.setAttribute('muted', '');
-        desktopPetVideo.playsInline = true;
-        desktopPetVideo.setAttribute('playsinline', '');
-        desktopPetVideo.setAttribute('webkit-playsinline', '');
-        desktopPetVideo.autoplay = true;
-        desktopPetVideo.loop = true;
-        
-        // 显示视频，隐藏图片
-        desktopPetVideo.style.display = 'block';
-        desktopPetImage.style.display = 'none';
-        
-        // 加载和播放视频
-        desktopPetVideo.onloadeddata = () => {
-          console.log('桌宠预设OC视频加载成功');
-          desktopPetVideo.play().catch((e) => {
-            console.log('桌宠预设OC视频自动播放失败:', e);
-          });
-        };
-        desktopPetVideo.onerror = (e) => {
-          console.error('桌宠预设OC视频加载失败:', e);
-          // 失败时显示图片
-          desktopPetVideo.style.display = 'none';
-          desktopPetImage.style.display = 'block';
-          desktopPetImage.src = 'assets/kong.png';
-        };
-        
-        desktopPetVideo.load();
-      } else {
-        // 其他情况使用默认图片
-        console.log('桌宠模式使用默认图片');
-        desktopPetVideo.style.display = 'none';
-        desktopPetImage.style.display = 'block';
-        desktopPetImage.src = 'assets/pal-001.png';
-        desktopPetImage.alt = pet.name;
-      }
-    }
-
-    // 同步字幕
-    if (desktopPetSubtitle) {
-      desktopPetSubtitle.textContent = `${pet.name} - ${pet.species}`;
-    }
-    console.log('桌宠媒体同步完成');
-  }
-
-  // 开启画中画模式
-  function startPipMode() {
-    if (!isDesktopPetActive) return;
-    
-    const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-    if (!selectedPet) return;
-
-    // 同步媒体到画中画
-    if (selectedPet.customMedia && selectedPet.customMedia.type && selectedPet.customMedia.type.startsWith('video/')) {
-      pipVideo.style.display = 'block';
-      pipImage.style.display = 'none';
-      
-      if (selectedPet.customMedia.dataUrl) {
-        pipVideo.src = selectedPet.customMedia.dataUrl;
-      } else if (selectedPet.customMedia.mediaId) {
-        idbGetMedia(selectedPet.customMedia.mediaId).then(rec => {
-          if (rec && rec.blob) {
-            const url = URL.createObjectURL(rec.blob);
-            pipVideo.src = url;
-          }
-        });
-      }
-    } else {
-      pipVideo.style.display = 'none';
-      pipImage.style.display = 'block';
-      
-      if (selectedPet.customMedia && selectedPet.customMedia.dataUrl) {
-        pipImage.src = selectedPet.customMedia.dataUrl;
-      } else if (selectedPet.customMedia && selectedPet.customMedia.mediaId) {
-        idbGetMedia(selectedPet.customMedia.mediaId).then(rec => {
-          if (rec && rec.blob) {
-            const url = URL.createObjectURL(rec.blob);
-            pipImage.src = url;
-          }
-        });
-      } else {
-        // 预设OC媒体处理 - 与主界面保持一致
-        if (selectedPet.id.startsWith('pal-')) {
-          // 预设OC使用对应的媒体文件
-          const mediaFile = `assets/${selectedPet.id}.webm`;
-          console.log('画中画模式加载预设OC视频:', mediaFile);
-          
-          // 配置视频属性
-          while (pipVideo.firstChild) {
-            pipVideo.removeChild(pipVideo.firstChild);
-          }
-          const source = document.createElement('source');
-          source.src = mediaFile;
-          source.type = 'video/webm';
-          pipVideo.appendChild(source);
-          
-          pipVideo.muted = true;
-          pipVideo.setAttribute('muted', '');
-          pipVideo.playsInline = true;
-          pipVideo.setAttribute('playsinline', '');
-          pipVideo.setAttribute('webkit-playsinline', '');
-          pipVideo.autoplay = true;
-          pipVideo.loop = true;
-          
-          // 显示视频，隐藏图片
-          pipVideo.style.display = 'block';
-          pipImage.style.display = 'none';
-          
-          // 加载和播放视频
-          pipVideo.onloadeddata = () => {
-            console.log('画中画预设OC视频加载成功');
-            pipVideo.play().catch((e) => {
-              console.log('画中画预设OC视频自动播放失败:', e);
-            });
-          };
-          pipVideo.onerror = (e) => {
-            console.error('画中画预设OC视频加载失败:', e);
-            // 失败时显示图片
-            pipVideo.style.display = 'none';
-            pipImage.style.display = 'block';
-            pipImage.src = 'assets/kong.png';
-          };
-          
-          pipVideo.load();
-        } else {
-          // 其他情况使用默认图片
-          pipImage.src = 'assets/pal-001.png';
-        }
-      }
-    }
-
-    // 显示画中画容器
-    pipContainer.classList.remove('hidden');
-    isPipActive = true;
-    
-    showNotification('画中画模式已开启', 'success');
-  }
-
-  // 关闭画中画模式
-  function stopPipMode() {
-    pipContainer.classList.add('hidden');
-    isPipActive = false;
-    showNotification('画中画模式已关闭', 'info');
-  }
-
-  // 最小化桌宠窗口
-  function minimizeDesktopPet() {
-    if (isMinimized) {
-      // 恢复
-      desktopPetWindow.classList.remove('minimized');
-      isMinimized = false;
-      desktopPetMinimize.innerHTML = '➖';
-      desktopPetMinimize.title = '最小化';
-    } else {
-      // 最小化
-      desktopPetWindow.classList.add('minimized');
-      isMinimized = true;
-      desktopPetMinimize.innerHTML = '🔲';
-      desktopPetMinimize.title = '恢复';
-    }
-  }
-
-  // 拖拽功能
-  function initDesktopPetDrag() {
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
-
-    desktopPetWindow.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.desktop-pet-controls')) return;
-      
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      
-      const rect = desktopPetWindow.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      
-      desktopPetWindow.classList.add('dragging');
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      desktopPetWindow.style.left = (startLeft + deltaX) + 'px';
-      desktopPetWindow.style.top = (startTop + deltaY) + 'px';
-      desktopPetWindow.style.right = 'auto';
-      desktopPetWindow.style.bottom = 'auto';
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        desktopPetWindow.classList.remove('dragging');
-      }
-    });
-
-    // 触摸设备支持
-    desktopPetWindow.addEventListener('touchstart', (e) => {
-      if (e.target.closest('.desktop-pet-controls')) return;
-      
-      isDragging = true;
-      const touch = e.touches[0];
-      startX = touch.clientX;
-      startY = touch.clientY;
-      
-      const rect = desktopPetWindow.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      
-      desktopPetWindow.classList.add('dragging');
-    });
-
-    document.addEventListener('touchmove', (e) => {
-      if (!isDragging) return;
-      
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - startX;
-      const deltaY = touch.clientY - startY;
-      
-      desktopPetWindow.style.left = (startLeft + deltaX) + 'px';
-      desktopPetWindow.style.top = (startTop + deltaY) + 'px';
-      desktopPetWindow.style.right = 'auto';
-      desktopPetWindow.style.bottom = 'auto';
-      
-      e.preventDefault();
-    });
-
-    document.addEventListener('touchend', () => {
-      if (isDragging) {
-        isDragging = false;
-        desktopPetWindow.classList.remove('dragging');
-      }
-    });
-  }
-
-  // 事件监听器
-  if (desktopPetBtn) {
-    desktopPetBtn.addEventListener('click', () => {
-      if (isDesktopPetActive) {
-        stopDesktopPetMode();
-      } else {
-        startDesktopPetMode();
-      }
-    });
-  }
-
-  if (desktopPetPip) {
-    desktopPetPip.addEventListener('click', () => {
-      if (isPipActive) {
-        stopPipMode();
-      } else {
-        startPipMode();
-      }
-    });
-  }
-
-  if (desktopPetMinimize) {
-    desktopPetMinimize.addEventListener('click', minimizeDesktopPet);
-  }
-
-  if (desktopPetClose) {
-    desktopPetClose.addEventListener('click', stopDesktopPetMode);
-  }
-
-  if (pipClose) {
-    pipClose.addEventListener('click', stopPipMode);
-  }
-
-  // 初始化拖拽功能
-  if (desktopPetWindow) {
-    initDesktopPetDrag();
-  }
-
-  // PWA 桌宠增强功能
-  function setupPWADesktopPet() {
-    // 检查是否为PWA模式
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true;
-    
-    if (isPWA) {
-      console.log('PWA模式：启用桌宠增强功能');
-      
-      // 启用后台运行
-      enableBackgroundDesktopPet();
-      
-      // 启用推送通知
-      enablePushNotifications();
-      
-      // 启用后台同步
-      enableBackgroundSync();
-    }
-  }
-
-  // 启用后台桌宠功能
-  function enableBackgroundDesktopPet() {
-    // 监听页面可见性变化
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && isDesktopPetActive) {
-        console.log('页面隐藏，桌宠继续运行');
-        // 可以在这里添加后台桌宠的特殊逻辑
-      } else if (!document.hidden && isDesktopPetActive) {
-        console.log('页面重新可见，桌宠恢复正常');
-      }
-    });
-
-    // 监听应用焦点变化
-    window.addEventListener('focus', () => {
-      if (isDesktopPetActive) {
-        console.log('应用获得焦点，桌宠恢复正常');
-      }
-    });
-
-    window.addEventListener('blur', () => {
-      if (isDesktopPetActive) {
-        console.log('应用失去焦点，桌宠继续运行');
-      }
-    });
-  }
-
-  // 启用推送通知
-  function enablePushNotifications() {
-    if ('Notification' in window && 'serviceWorker' in navigator) {
-      // 请求通知权限
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') {
-            console.log('推送通知权限已获得');
-            scheduleDesktopPetNotifications();
-          }
-        });
-      } else if (Notification.permission === 'granted') {
-        console.log('推送通知权限已存在');
-        scheduleDesktopPetNotifications();
-      }
-    }
-  }
-
-  // 安排桌宠通知
-  function scheduleDesktopPetNotifications() {
-    // 每小时发送一次提醒
-    setInterval(() => {
-      if (isDesktopPetActive && state.selectedPetId) {
-        const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-        if (selectedPet) {
-          sendDesktopPetNotification(selectedPet);
-        }
-      }
-    }, 60 * 60 * 1000); // 1小时
-  }
-
-  // 发送桌宠通知
-  function sendDesktopPetNotification(pet) {
-    const messages = [
-      `${pet.name}想你了！快来陪陪我吧～`,
-      `你的${pet.name}饿了，需要喂食哦！`,
-      `${pet.name}觉得无聊，想和你玩耍～`,
-      `该给${pet.name}清洁了，保持卫生很重要！`,
-      `${pet.name}困了，需要休息一下～`
-    ];
-    
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SHOW_NOTIFICATION',
-        title: 'OC云台小窝',
-        body: randomMessage,
-        icon: '/assets/pet.svg'
-      });
-    }
-  }
-
-  // 启用后台同步
-  function enableBackgroundSync() {
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-      navigator.serviceWorker.ready.then((registration) => {
-        // 注册后台同步
-        registration.sync.register('background-sync').then(() => {
-          console.log('后台同步已注册');
-        }).catch((err) => {
-          console.log('后台同步注册失败:', err);
-        });
-      });
-    }
-  }
-
-  // 监听OC选择变化，自动同步到桌宠窗口
-  function setupDesktopPetSync() {
-    // 监听OC列表点击事件
-    const petList = document.getElementById('pet-list');
-    if (petList) {
-      petList.addEventListener('click', (e) => {
-        const petItem = e.target.closest('.pet-item');
-        if (petItem && isDesktopPetActive) {
-          // 延迟执行，确保state已更新
-          setTimeout(() => {
-            const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-            if (selectedPet) {
-              console.log('OC切换，同步到桌宠窗口:', selectedPet);
-              syncMediaToDesktopPet(selectedPet);
-            }
-          }, 100);
-        }
-      });
-    }
-
-    // 监听移动端OC列表点击事件
-    const mobilePetList = document.getElementById('mobile-pet-list');
-    if (mobilePetList) {
-      mobilePetList.addEventListener('click', (e) => {
-        const petItem = e.target.closest('.pet-item');
-        if (petItem && isDesktopPetActive) {
-          setTimeout(() => {
-            const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-            if (selectedPet) {
-              console.log('移动端OC切换，同步到桌宠窗口:', selectedPet);
-              syncMediaToDesktopPet(selectedPet);
-            }
-          }, 100);
-        }
-      });
-    }
-
-    // 监听OC选择弹窗的点击事件
-    const selectPetList = document.getElementById('select-pet-list');
-    if (selectPetList) {
-      selectPetList.addEventListener('click', (e) => {
-        const selectPetItem = e.target.closest('.select-pet-item');
-        if (selectPetItem && isDesktopPetActive) {
-          setTimeout(() => {
-            const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-            if (selectedPet) {
-              console.log('OC选择弹窗切换，同步到桌宠窗口:', selectedPet);
-              syncMediaToDesktopPet(selectedPet);
-            }
-          }, 100);
-        }
-      });
-    }
-  }
-
-  // 当OC状态更新时，同步到桌宠窗口
-  function syncDesktopPetOnUpdate() {
-    if (isDesktopPetActive && state.selectedPetId) {
-      const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-      if (selectedPet) {
-        console.log('状态更新，同步到桌宠窗口:', selectedPet);
-        syncMediaToDesktopPet(selectedPet);
-      }
-    }
-  }
-
-  // 在现有的状态更新函数中调用同步
-  const originalSaveState = saveState;
-  saveState = function(newState) {
-    originalSaveState(newState);
-    syncDesktopPetOnUpdate();
-  };
-
-  // 监听OC选择变化，同步到桌宠窗口
-  // 在现有的OC选择逻辑中添加桌宠同步
-  function addDesktopPetSyncToPetSelection() {
-    // 找到所有OC选择的事件监听器，添加桌宠同步
-    const petItems = document.querySelectorAll('.pet-item');
-    petItems.forEach(item => {
-      item.addEventListener('click', () => {
-        // 延迟执行，确保state已更新
-        setTimeout(() => {
-          if (isDesktopPetActive && state.selectedPetId) {
-            const selectedPet = state.pets.find(pet => pet.id === state.selectedPetId);
-            if (selectedPet) {
-              syncMediaToDesktopPet(selectedPet);
-            }
-          }
-        }, 100);
-      });
-    });
-  }
-  
-  // 在render函数调用后添加桌宠同步
-  const originalRender = render;
-  render = function() {
-    originalRender();
-    // 延迟执行，确保DOM已渲染
-    setTimeout(() => {
-      addDesktopPetSyncToPetSelection();
-    }, 200);
-  };
-
-  // ---------- 系统级画中画（Android Chrome 可用） ----------
-  let pipMirrorCanvas = null;
-  let pipMirrorCtx = null;
-  let pipMirrorVideo = null;
-  let pipMirrorAnimating = false;
-  let pipCleanup = null;
-
-  function getStageMediaElements() {
-    const stageVideo = document.getElementById('pet-stage-video');
-    const stageImg = document.getElementById('pet-stage-image');
-    return { stageVideo, stageImg };
-  }
-
-  function drawPiPLoop() {
-    if (!pipMirrorAnimating || !pipMirrorCanvas || !pipMirrorCtx) return;
-    const { stageVideo, stageImg } = getStageMediaElements();
-    const w = pipMirrorCanvas.width;
-    const h = pipMirrorCanvas.height;
-    pipMirrorCtx.clearRect(0, 0, w, h);
-
-    // 优先绘制视频，其次绘制图片
-    if (stageVideo && stageVideo.style.display !== 'none' && stageVideo.readyState >= 2) {
-      try { pipMirrorCtx.drawImage(stageVideo, 0, 0, w, h); } catch (_) {}
-    } else if (stageImg && stageImg.style.display !== 'none' && stageImg.complete) {
-      try { pipMirrorCtx.drawImage(stageImg, 0, 0, w, h); } catch (_) {}
-    }
-
-    requestAnimationFrame(drawPiPLoop);
-  }
-
-  async function startSystemPiP() {
-    // 仅在浏览器支持情况下启用
-    const pipSupported = document.pictureInPictureEnabled && typeof HTMLVideoElement !== 'undefined' && typeof HTMLVideoElement.prototype.requestPictureInPicture === 'function';
-    if (!pipSupported) {
-      return false;
-    }
-
-    // 准备镜像画布与隐藏video
-    if (!pipMirrorCanvas) {
-      pipMirrorCanvas = document.createElement('canvas');
-      // 以舞台视频/图片的尺寸为基准
-      const container = document.querySelector('.pet-media-container');
-      const rect = container ? container.getBoundingClientRect() : { width: 320, height: 240 };
-      pipMirrorCanvas.width = Math.max(160, Math.floor(rect.width)) || 320;
-      pipMirrorCanvas.height = Math.max(120, Math.floor(rect.height)) || 240;
-      pipMirrorCtx = pipMirrorCanvas.getContext('2d');
-    }
-
-    if (!pipMirrorVideo) {
-      pipMirrorVideo = document.createElement('video');
-      pipMirrorVideo.setAttribute('playsinline', '');
-      pipMirrorVideo.muted = true;
-      pipMirrorVideo.autoplay = true;
-      pipMirrorVideo.style.position = 'fixed';
-      pipMirrorVideo.style.width = '1px';
-      pipMirrorVideo.style.height = '1px';
-      pipMirrorVideo.style.opacity = '0';
-      pipMirrorVideo.style.pointerEvents = 'none';
-      document.body.appendChild(pipMirrorVideo);
-    }
-
-    // 将canvas作为MediaStream源
-    const stream = pipMirrorCanvas.captureStream ? pipMirrorCanvas.captureStream(30) : null;
-    if (!stream) {
-      return false;
-    }
-    pipMirrorVideo.srcObject = stream;
-    try { await pipMirrorVideo.play(); } catch (_) {}
-
-    // 启动绘制循环
-    pipMirrorAnimating = true;
-    drawPiPLoop();
-
-    // 请求系统级画中画
-    try {
-      await pipMirrorVideo.requestPictureInPicture();
-    } catch (err) {
-      // 请求失败时停止循环
-      pipMirrorAnimating = false;
-      return false;
-    }
-
-    // 离开PiP时清理
-    const onLeave = () => {
-      stopSystemPiP();
-      document.removeEventListener('leavepictureinpicture', onLeave);
-    };
-    document.addEventListener('leavepictureinpicture', onLeave, { once: true });
-
-    // 清理函数
-    pipCleanup = () => {
-      pipMirrorAnimating = false;
-      if (pipMirrorVideo) {
-        try { pipMirrorVideo.pause(); } catch (_) {}
-        pipMirrorVideo.srcObject = null;
-        if (pipMirrorVideo.parentNode) pipMirrorVideo.parentNode.removeChild(pipMirrorVideo);
-        pipMirrorVideo = null;
-      }
-      pipMirrorCanvas = null;
-      pipMirrorCtx = null;
-    };
-
-    return true;
-  }
-
-  function stopSystemPiP() {
-    pipMirrorAnimating = false;
-    if (document.pictureInPictureElement) {
-      try { document.exitPictureInPicture(); } catch (_) {}
-    }
-    if (typeof pipCleanup === 'function') {
-      pipCleanup();
-      pipCleanup = null;
-    }
-  }
-
-  function isSystemPiPSupported() {
-    return !!(document.pictureInPictureEnabled && typeof HTMLVideoElement !== 'undefined' && typeof HTMLVideoElement.prototype.requestPictureInPicture === 'function');
-  }
-
-  // 改造原有"画中画"按钮：优先系统PiP，否则回退到页面内小窗
-  if (desktopPetPip) {
-    desktopPetPip.addEventListener('click', async () => {
-      if (isSystemPiPSupported()) {
-        const ok = await startSystemPiP();
-        if (!ok) {
-          // 回退到旧的页面内PiP容器
-          if (isPipActive) { stopPipMode(); } else { startPipMode(); }
-        }
-      } else {
-        if (isPipActive) { stopPipMode(); } else { startPipMode(); }
-      }
-    });
-  }
-
-  // ========================= 新版桌宠功能（完整重写） =========================
-  (function initDesktopPetController() {
-    const els = {
-      btnToggle: document.getElementById('desktop-pet-btn'),
-      win: document.getElementById('desktop-pet-window'),
-      v: document.getElementById('desktop-pet-video'),
-      img: document.getElementById('desktop-pet-image'),
-      subtitle: document.getElementById('desktop-pet-subtitle'),
-      pipBtn: document.getElementById('desktop-pet-pip'),
-      minBtn: document.getElementById('desktop-pet-minimize'),
-      closeBtn: document.getElementById('desktop-pet-close'),
-      stageVideo: document.getElementById('pet-stage-video'),
-      stageImg: document.getElementById('pet-stage-image'),
-      stageContainer: document.querySelector('.pet-media-container')
-    };
-
-    if (!els.win || !els.v || !els.img) return;
-
-    const stateDP = {
-      active: false,
-      minimized: false,
-      initialized: false,
-      observer: null
-    };
-
-    function getStageMediaState() {
-      const videoVisible = els.stageVideo && els.stageVideo.style.display !== 'none';
-      const imgVisible = els.stageImg && els.stageImg.style.display !== 'none';
-      if (videoVisible && els.stageVideo.readyState >= 2) {
-        // 复制所有<source>
-        const sources = Array.from(els.stageVideo.querySelectorAll('source')).map(s => ({ src: s.src, type: s.type }));
-        return { kind: 'video', sources };
-      }
-      if (imgVisible && els.stageImg && els.stageImg.src) {
-        return { kind: 'image', src: els.stageImg.src };
-      }
-      // 回退：如果video有currentSrc也用
-      if (els.stageVideo && els.stageVideo.currentSrc) {
-        return { kind: 'video', sources: [{ src: els.stageVideo.currentSrc, type: 'video/mp4' }] };
-      }
-      return { kind: 'none' };
-    }
-
-    function setMediaToDesktop(state) {
-      if (state.kind === 'video') {
-        // 清空并克隆sources
-        while (els.v.firstChild) els.v.removeChild(els.v.firstChild);
-        state.sources.forEach(({ src, type }) => {
-          if (!src) return;
-          const s = document.createElement('source');
-          s.src = src;
-          if (type) s.type = type;
-          els.v.appendChild(s);
-        });
-        els.v.muted = true;
-        els.v.setAttribute('muted', '');
-        els.v.playsInline = true;
-        els.v.setAttribute('playsinline', '');
-        els.v.setAttribute('webkit-playsinline', '');
-        els.v.autoplay = true;
-        els.v.loop = true;
-        els.v.style.display = 'block';
-        els.img.style.display = 'none';
-        els.v.load();
-        els.v.play().catch(() => {});
-      } else if (state.kind === 'image') {
-        els.v.pause();
-        els.v.style.display = 'none';
-        els.img.style.display = 'block';
-        els.img.src = state.src || '';
-      } else {
-        // 无媒体：隐藏
-        els.v.style.display = 'none';
-        els.img.style.display = 'none';
-      }
-    }
-
-    function syncSubtitle() {
-      try {
-        const pet = state.pets.find(p => p.id === state.selectedPetId);
-        if (pet && els.subtitle) {
-          els.subtitle.textContent = `${pet.name} - ${pet.species}`;
-        }
-      } catch (_) {}
-    }
-
-    function syncFromStage() {
-      const m = getStageMediaState();
-      setMediaToDesktop(m);
-      syncSubtitle();
-    }
-
-    function startDesktopPet() {
-      syncFromStage();
-      els.win.classList.remove('hidden');
-      els.btnToggle && (els.btnToggle.innerHTML = '<span class="action-emoji">🖥️</span><span class="action-text">关闭桌宠</span>');
-      stateDP.active = true;
-    }
-
-    function stopDesktopPet() {
-      els.win.classList.add('hidden');
-      els.v.pause();
-      els.btnToggle && (els.btnToggle.innerHTML = '<span class="action-emoji">🖥️</span><span class="action-text">桌宠</span>');
-      stateDP.active = false;
-      stateDP.minimized = false;
-      els.win.classList.remove('minimized');
-    }
-
-    function toggleDesktopPet() {
-      if (stateDP.active) stopDesktopPet(); else startDesktopPet();
-    }
-
-    function toggleMinimize() {
-      stateDP.minimized = !stateDP.minimized;
-      if (stateDP.minimized) {
-        els.win.classList.add('minimized');
-        if (els.minBtn) { els.minBtn.innerHTML = '🔲'; els.minBtn.title = '恢复'; }
-      } else {
-        els.win.classList.remove('minimized');
-        if (els.minBtn) { els.minBtn.innerHTML = '➖'; els.minBtn.title = '最小化'; }
-      }
-    }
-
-    async function requestPiP() {
-      if (!stateDP.active) return;
-      if (els.v.style.display === 'block' && document.pictureInPictureEnabled && typeof els.v.requestPictureInPicture === 'function') {
-        try { await els.v.requestPictureInPicture(); } catch (_) {}
-      } else {
-        showNotification && showNotification('当前为图片，系统PiP不可用', 'warning');
-      }
-    }
-
-    function attachMutationObserver() {
-      if (stateDP.observer) return;
-      const config = { attributes: true, childList: true, subtree: true };
-      stateDP.observer = new MutationObserver(() => {
-        if (stateDP.active) syncFromStage();
-      });
-      if (els.stageContainer) stateDP.observer.observe(els.stageContainer, config);
-      if (els.stageVideo) stateDP.observer.observe(els.stageVideo, config);
-      if (els.stageImg) stateDP.observer.observe(els.stageImg, config);
-      // 监听视频播放事件以提升一致性
-      els.stageVideo && els.stageVideo.addEventListener('loadeddata', () => stateDP.active && syncFromStage());
-      els.stageVideo && els.stageVideo.addEventListener('canplay', () => stateDP.active && syncFromStage());
-      els.stageImg && els.stageImg.addEventListener('load', () => stateDP.active && syncFromStage());
-    }
-
-    function hookLoadPetMedia() {
-      if (typeof loadPetMedia === 'function' && !loadPetMedia.__hookedForDesktopPet) {
-        const original = loadPetMedia;
-        loadPetMedia = function(pet) {
-          const r = original.apply(this, arguments);
-          // 稍后同步，等待媒体元素更新
-          setTimeout(() => { if (stateDP.active) syncFromStage(); }, 50);
-          return r;
-        };
-        loadPetMedia.__hookedForDesktopPet = true;
-      }
-    }
-
-    function initOnce() {
-      if (stateDP.initialized) return;
-      stateDP.initialized = true;
-      hookLoadPetMedia();
-      attachMutationObserver();
-
-      // 绑定控件
-      if (els.btnToggle) {
-        els.btnToggle.onclick = toggleDesktopPet;
-      }
-      if (els.closeBtn) {
-        els.closeBtn.onclick = stopDesktopPet;
-      }
-      if (els.minBtn) {
-        els.minBtn.onclick = toggleMinimize;
-      }
-      if (els.pipBtn) {
-        els.pipBtn.onclick = requestPiP;
-      }
-
-      // 拖拽（保留简单实现）
-      (function enableDrag() {
-        let dragging = false, sx = 0, sy = 0, sl = 0, st = 0;
-        els.win.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.desktop-pet-controls')) return;
-          dragging = true; sx = e.clientX; sy = e.clientY; const r = els.win.getBoundingClientRect(); sl = r.left; st = r.top; els.win.classList.add('dragging'); e.preventDefault();
-        });
-        document.addEventListener('mousemove', (e) => { if (!dragging) return; els.win.style.left = (sl + e.clientX - sx) + 'px'; els.win.style.top = (st + e.clientY - sy) + 'px'; els.win.style.right = 'auto'; els.win.style.bottom = 'auto'; });
-        document.addEventListener('mouseup', () => { if (dragging) { dragging = false; els.win.classList.remove('dragging'); } });
-        els.win.addEventListener('touchstart', (e) => { if (e.target.closest('.desktop-pet-controls')) return; dragging = true; const t = e.touches[0]; sx = t.clientX; sy = t.clientY; const r = els.win.getBoundingClientRect(); sl = r.left; st = r.top; els.win.classList.add('dragging'); });
-        document.addEventListener('touchmove', (e) => { if (!dragging) return; const t = e.touches[0]; els.win.style.left = (sl + t.clientX - sx) + 'px'; els.win.style.top = (st + t.clientY - sy) + 'px'; els.win.style.right = 'auto'; els.win.style.bottom = 'auto'; e.preventDefault(); });
-        document.addEventListener('touchend', () => { if (dragging) { dragging = false; els.win.classList.remove('dragging'); } });
-      })();
-    }
-
-    // 初始化
-    initOnce();
-
-    // 若已选择OC，初始时同步一次
-    setTimeout(() => { if (state.selectedPetId) syncFromStage(); }, 100);
-  })();
-  // ========================= 新版桌宠功能（完） =========================
-
 })();
 
