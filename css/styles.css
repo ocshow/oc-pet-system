@@ -1641,19 +1641,30 @@ body {
 .field { display: grid; gap: 6px; margin: 12px 0; }
 .field > span { color: var(--muted); font-size: 12px; }
 .required { color: #ff6b6b; }
-.dialog .field input, .dialog .field select {
+.dialog .field input, .dialog .field select, .dialog .field textarea {
   background: #ffffff;
   border: 2px dashed rgba(255, 134, 178, 0.25);
   color: var(--text);
   padding: 10px 12px;
   border-radius: 12px;
   box-shadow: 0 6px 14px rgba(255, 134, 178, 0.08);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
 }
 
-.dialog .field input:focus, .dialog .field select:focus {
+.dialog .field input:focus, .dialog .field select:focus, .dialog .field textarea:focus {
   outline: none;
   border-color: rgba(255, 134, 178, 0.5);
   box-shadow: 0 8px 18px rgba(255, 134, 178, 0.16);
+}
+
+.dialog .field textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 200px;
 }
 
 /* 种族输入框样式增强 */
