@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ff86b2" />
     <title></title>
-    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="assets/pal-001.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -188,11 +187,11 @@
                 <div class="actions">
                   <button id="feed-btn" class="btn action-btn">
                     <span class="action-emoji">🍖</span>
-                    <span class="action-text">喂食</span>
+                    <span class="action-text">投喂</span>
                   </button>
                   <button id="clean-btn" class="btn action-btn">
                     <span class="action-emoji">🧼</span>
-                    <span class="action-text">清洁</span>
+                    <span class="action-text">沐浴</span>
                   </button>
                   <button id="sleep-btn" class="btn action-btn">
                     <span class="action-emoji">🛌</span>
@@ -201,6 +200,10 @@
                   <button id="play-btn" class="btn action-btn">
                     <span class="action-emoji">🪀</span>
                     <span class="action-text">玩耍</span>
+                  </button>
+                  <button id="open-chat-btn" class="btn action-btn">
+                    <span class="action-emoji">💬</span>
+                    <span class="action-text">聊天</span>
                   </button>
                   <button id="video-bg-btn" class="btn action-btn" title="切换光影处理模式" style="display: none;">
                     <span class="action-emoji">🎨</span>
@@ -211,6 +214,8 @@
 
               <!-- 互动记录容器 -->
               <div id="interaction-log" class="interaction-log" aria-label="互动记录"></div>
+              
+
 
               <!-- 小游戏面板（默认隐藏，点击“玩耍”时作为浮层显示） -->
               <div id="play-panel" class="play-panel hidden" aria-labelledby="play-panel-title" style="position: relative;">
@@ -405,6 +410,200 @@
         </div>
       </dialog>
 
+      <!-- 投喂选择弹窗 -->
+      <dialog id="feeding-dialog" class="dialog" aria-labelledby="feeding-title">
+        <div class="dialog-body">
+          <h3 id="feeding-title" class="dialog-title">选择投喂方式</h3>
+          <div class="feeding-options">
+            <button id="takeout-option" class="feeding-option">
+              <div class="feeding-icon">🍕</div>
+              <div class="feeding-text">
+                <h4>外卖</h4>
+                <p>快速又便捷，就是有点贵 </p>
+              </div>
+            </button>
+            <button id="homemade-option" class="feeding-option">
+              <div class="feeding-icon">👨‍🍳</div>
+              <div class="feeding-text">
+                <h4>自己做</h4>
+                <p>亲手烹饪，更有爱意</p>
+              </div>
+            </button>
+          </div>
+          <div class="dialog-actions">
+            <button id="feeding-cancel" class="btn btn-secondary">取消</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- 外卖选择弹窗 -->
+      <dialog id="takeout-dialog" class="dialog" aria-labelledby="takeout-title">
+        <div class="dialog-body">
+          <h3 id="takeout-title" class="dialog-title">选择外卖</h3>
+          <div class="takeout-options">
+            <button class="takeout-item" data-food="pizza">
+              <span class="food-emoji">🍕</span>
+              <span class="food-name">披萨</span>
+            </button>
+            <button class="takeout-item" data-food="burger">
+              <span class="food-emoji">🍔</span>
+              <span class="food-name">汉堡</span>
+            </button>
+            <button class="takeout-item" data-food="sushi">
+              <span class="food-emoji">🍣</span>
+              <span class="food-name">寿司</span>
+            </button>
+            <button class="takeout-item" data-food="noodles">
+              <span class="food-emoji">🍜</span>
+              <span class="food-name">拉面</span>
+            </button>
+            <button class="takeout-item" data-food="rice">
+              <span class="food-emoji">🍚</span>
+              <span class="food-name">炒饭</span>
+            </button>
+            <button class="takeout-item" data-food="salad">
+              <span class="food-emoji">🥗</span>
+              <span class="food-name">沙拉</span>
+            </button>
+          </div>
+          <div class="dialog-actions">
+            <button id="takeout-back" class="btn btn-secondary">返回</button>
+            <button id="takeout-cancel" class="btn btn-secondary">取消</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- 烹饪选择弹窗 -->
+      <dialog id="cooking-dialog" class="dialog" aria-labelledby="cooking-title">
+        <div class="dialog-body">
+          <h3 id="cooking-title" class="dialog-title">选择食材烹饪</h3>
+          <div class="ingredients-section">
+            <h4>选择主料</h4>
+            <div class="ingredients-grid">
+              <button class="ingredient-item" data-ingredient="chicken">
+                <span class="ingredient-emoji">🍗</span>
+                <span class="ingredient-name">鸡肉</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="fish">
+                <span class="ingredient-emoji">🐟</span>
+                <span class="ingredient-name">鱼肉</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="beef">
+                <span class="ingredient-emoji">🥩</span>
+                <span class="ingredient-name">牛肉</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="pork">
+                <span class="ingredient-emoji">🥓</span>
+                <span class="ingredient-name">猪肉</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="tofu">
+                <span class="ingredient-emoji">🧈</span>
+                <span class="ingredient-name">豆腐</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="egg">
+                <span class="ingredient-emoji">🥚</span>
+                <span class="ingredient-name">鸡蛋</span>
+              </button>
+            </div>
+          </div>
+          <div class="ingredients-section">
+            <h4>选择配菜</h4>
+            <div class="ingredients-grid">
+              <button class="ingredient-item" data-ingredient="carrot">
+                <span class="ingredient-emoji">🥕</span>
+                <span class="ingredient-name">胡萝卜</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="broccoli">
+                <span class="ingredient-emoji">🥦</span>
+                <span class="ingredient-name">西兰花</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="tomato">
+                <span class="ingredient-emoji">🍅</span>
+                <span class="ingredient-name">番茄</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="potato">
+                <span class="ingredient-emoji">🥔</span>
+                <span class="ingredient-name">土豆</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="onion">
+                <span class="ingredient-emoji">🧅</span>
+                <span class="ingredient-name">洋葱</span>
+              </button>
+              <button class="ingredient-item" data-ingredient="mushroom">
+                <span class="ingredient-emoji">🍄</span>
+                <span class="ingredient-name">蘑菇</span>
+              </button>
+            </div>
+          </div>
+          <div class="cooking-result" id="cooking-result" style="display: none;">
+            <h4>烹饪结果</h4>
+            <div id="cooked-dish" class="cooked-dish">
+              <span class="dish-name">美味料理</span>
+            </div>
+            <div id="cooking-grade" class="cooking-grade">
+              <span class="grade-emoji">🍽️</span>
+              <span class="grade-text">烹饪等级</span>
+            </div>
+          </div>
+          <div class="dialog-actions">
+            <button id="cooking-back" class="btn btn-secondary">返回</button>
+            <button id="cooking-cook" class="btn btn-primary">开始烹饪</button>
+            <button id="cooking-cancel" class="btn btn-secondary">取消</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- 沐浴选择弹窗 -->
+      <dialog id="bathing-dialog" class="dialog" aria-labelledby="bathing-title">
+        <div class="dialog-body">
+          <h3 id="bathing-title" class="dialog-title">选择沐浴方式</h3>
+          <div class="bathing-options">
+            <button class="bathing-option" data-bathing="quick">
+              <div class="bathing-icon">🚿</div>
+              <div class="bathing-text">
+                <h4>快速冲澡</h4>
+                <p>简单快捷，适合日常清洁</p>
+              </div>
+            </button>
+            <button class="bathing-option" data-bathing="bubble">
+              <div class="bathing-icon">🛁</div>
+              <div class="bathing-text">
+                <h4>泡泡浴</h4>
+                <p>香香泡泡，放松身心</p>
+              </div>
+            </button>
+            <button class="bathing-option" data-bathing="spa">
+              <div class="bathing-icon">💆</div>
+              <div class="bathing-text">
+                <h4>SPA护理</h4>
+                <p>专业护理，焕发光彩</p>
+              </div>
+            </button>
+            <button class="bathing-option" data-bathing="magical">
+              <div class="bathing-icon">✨</div>
+              <div class="bathing-text">
+                <h4>魔法沐浴</h4>
+                <p>神秘魔法，特殊效果</p>
+              </div>
+            </button>
+          </div>
+          <div class="bathing-result" id="bathing-result" style="display: none;">
+            <h4>沐浴结果</h4>
+            <div id="bathing-effect" class="bathing-effect">
+              <span class="effect-name">沐浴效果</span>
+            </div>
+            <div id="bathing-grade" class="bathing-grade">
+              <span class="grade-emoji">🛁</span>
+              <span class="grade-text">沐浴等级</span>
+            </div>
+          </div>
+          <div class="dialog-actions">
+            <button id="bathing-back" class="btn btn-secondary">返回</button>
+            <button id="bathing-start" class="btn btn-primary">开始沐浴</button>
+            <button id="bathing-cancel" class="btn btn-secondary">取消</button>
+          </div>
+        </div>
+      </dialog>
 
     </div>
 

@@ -681,7 +681,113 @@ body {
   justify-content: space-between; /* 均匀分布 */
   gap: 8px;
   width: 100%;
-  padding: 0 12px; /* 左右留出间距：喂食左侧 & 背景右侧 */
+  padding: 0 12px; /* 左右留出间距：投喂左侧 & 背景右侧 */
+}
+
+/* 聊天区域样式 */
+.chat-section {
+  margin-top: 10px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 10px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(255, 134, 178, 0.12);
+  min-height: 180px;
+  max-height: 360px;
+}
+
+.chat-messages {
+  padding: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-line {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.chat-line.from-user {
+  align-self: flex-end;
+  background: #e8f5ff;
+  border: 1px solid rgba(165, 216, 255, 0.6);
+}
+
+.chat-line.from-ai {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px dashed rgba(255, 134, 178, 0.35);
+}
+
+/* 思考状态样式 */
+.chat-line.thinking {
+  background: linear-gradient(135deg, #fff5f8, #fff);
+  border: 1px dashed rgba(255, 134, 178, 0.5);
+  animation: thinking-pulse 2s ease-in-out infinite;
+}
+
+.thinking-text {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.thinking-dots {
+  color: var(--primary);
+  animation: thinking-dots 1.5s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes thinking-dots {
+  0%, 20% { opacity: 0.3; }
+  40% { opacity: 0.6; }
+  60% { opacity: 0.8; }
+  80%, 100% { opacity: 1; }
+}
+
+.chat-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px dashed rgba(255, 134, 178, 0.25);
+  background: rgba(255,255,255,0.6);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.chat-input {
+  background: #ffffff;
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(255, 134, 178, 0.08);
+  font-family: inherit;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: rgba(255, 134, 178, 0.5);
+  box-shadow: 0 6px 14px rgba(255, 134, 178, 0.14);
+}
+
+@media (max-width: 920px) {
+  .chat-section { max-height: 300px; }
+  .chat-line { max-width: 86%; }
 }
 
 /* 让图标在上、文字在下（可爱萌系） */
@@ -908,8 +1014,8 @@ body {
   100% { transform: translateY(0) scale(1); }
 }
 
-/* 食物飞行动画 */
-.food-fx {
+/* 食物飞行动画 - 已移除，现在使用动态食物粒子系统 */
+/* .food-fx {
   position: absolute;
   left: 10%;
   top: 80%;
@@ -922,7 +1028,7 @@ body {
   0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
   20% { opacity: 1; }
   100% { transform: translate(180px, -140px) scale(1.2); opacity: 0; }
-}
+} */
 
 /* 玩耍：左右轻摇 */
 #pet-stage-video.anim-wiggle,
@@ -1931,6 +2037,436 @@ datalist option:not(:last-child) {
 @media (orientation: landscape) and (max-width: 920px) {
   .pet-stage { height: 50vh; }
   .pet-status-panel { height: auto; }
+}
+
+/* 投喂系统样式 */
+.feeding-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.feeding-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.feeding-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 134, 178, 0.2);
+  border-color: rgba(255, 134, 178, 0.4);
+}
+
+.feeding-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.feeding-text h4 {
+  margin: 0 0 4px 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.feeding-text p {
+  margin: 0;
+  color: #8b8b8b;
+  font-size: 12px;
+}
+
+/* 外卖选择样式 */
+.takeout-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.takeout-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.takeout-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 134, 178, 0.15);
+  border-color: rgba(255, 134, 178, 0.4);
+}
+
+.takeout-item.selected {
+  background: linear-gradient(135deg, #ffe9f3, #e8f5ff);
+  border-color: #ff86b2;
+  box-shadow: 0 4px 12px rgba(255, 134, 178, 0.2);
+}
+
+.food-emoji {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.food-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* 烹饪选择样式 */
+.ingredients-section {
+  margin-bottom: 20px;
+}
+
+.ingredients-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ingredients-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ingredient-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 6px;
+  background: linear-gradient(135deg, #fff5fa, #f0f9ff);
+  border: 2px dashed rgba(255, 134, 178, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.ingredient-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 134, 178, 0.15);
+  border-color: rgba(255, 134, 178, 0.4);
+}
+
+.ingredient-item.selected {
+  background: linear-gradient(135deg, #ffe9f3, #e8f5ff);
+  border-color: #ff86b2;
+  box-shadow: 0 4px 12px rgba(255, 134, 178, 0.2);
+}
+
+.ingredient-emoji {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.ingredient-name {
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* 烹饪结果样式 */
+.cooking-result {
+  margin: 20px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #ffe9f3, #e8f5ff);
+  border: 2px dashed rgba(255, 134, 178, 0.3);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.cooking-result h4 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cooked-dish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.dish-name {
+  font-size: 18px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 烹饪等级样式 */
+.cooking-grade {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 134, 178, 0.2);
+}
+
+.grade-emoji {
+  font-size: 18px;
+}
+
+.grade-text {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* 不同等级的样式 */
+/* 成功阵营（好吃到发光） */
+.cooking-grade.divine {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  border-color: #fdcb6e;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+}
+
+.cooking-grade.master {
+  background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+  border-color: #17a2b8;
+  box-shadow: 0 0 15px rgba(23, 162, 184, 0.3);
+}
+
+.cooking-grade.excellent {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  border-color: #28a745;
+  box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+/* 中间阵营（能吃，但别有太多期待） */
+.cooking-grade.passable {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  border-color: #ffc107;
+}
+
+.cooking-grade.abstract {
+  background: linear-gradient(135deg, #e2e3e5, #d6d8db);
+  border-color: #6c757d;
+}
+
+/* 失败阵营（建议重开） */
+.cooking-grade.mild_fail {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  border-color: #dc3545;
+}
+
+.cooking-grade.severe_fail {
+  background: linear-gradient(135deg, #721c24, #5a1a1a);
+  border-color: #721c24;
+  color: #fff;
+}
+
+.cooking-grade.apocalypse {
+  background: linear-gradient(135deg, #2c1810, #1a0f0a);
+  border-color: #8b0000;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+}
+
+/* 沐浴选择样式 */
+.bathing-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.bathing-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+  border: 2px dashed rgba(100, 149, 237, 0.25);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.bathing-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(100, 149, 237, 0.2);
+  border-color: rgba(100, 149, 237, 0.4);
+}
+
+.bathing-option.selected {
+  background: linear-gradient(135deg, #e6f3ff, #d1e7ff);
+  border-color: #6495ed;
+  box-shadow: 0 4px 12px rgba(100, 149, 237, 0.2);
+}
+
+.bathing-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.bathing-text h4 {
+  margin: 0 0 4px 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.bathing-text p {
+  margin: 0;
+  color: #8b8b8b;
+  font-size: 12px;
+}
+
+/* 沐浴结果样式 */
+.bathing-result {
+  margin: 20px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #e6f3ff, #d1e7ff);
+  border: 2px dashed rgba(100, 149, 237, 0.3);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.bathing-result h4 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.bathing-effect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.effect-name {
+  font-size: 18px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 沐浴等级样式 */
+.bathing-grade {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(100, 149, 237, 0.2);
+}
+
+/* 不同沐浴等级的样式 */
+.bathing-grade.perfect {
+  background: linear-gradient(135deg, #e6f3ff, #d1e7ff);
+  border-color: #6495ed;
+  box-shadow: 0 0 15px rgba(100, 149, 237, 0.3);
+}
+
+.bathing-grade.good {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  border-color: #28a745;
+  box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+.bathing-grade.normal {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  border-color: #ffc107;
+}
+
+.bathing-grade.poor {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  border-color: #dc3545;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+  .feeding-options {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .takeout-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .ingredients-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .bathing-options {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* 食物粒子效果 */
+@keyframes foodParticleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.8);
+  }
+}
+
+.food-particle {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  will-change: transform, opacity;
+}
+
+/* 沐浴粒子效果 */
+@keyframes bathingParticleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1) rotate(180deg);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-40px) scale(1.3) rotate(360deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70px) scale(0.7) rotate(720deg);
+  }
+}
+
+.bathing-particle {
+  filter: drop-shadow(0 2px 6px rgba(100, 149, 237, 0.3));
+  will-change: transform, opacity;
 }
 
 @media (max-width: 480px) {

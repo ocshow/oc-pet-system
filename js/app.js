@@ -452,7 +452,7 @@
     'K9mN7pQ2x': [0, 1],      
     'R8vL5hJ9w': [0, 2],       
     'T3yU6kM4z': [0, 3],      
-    'X7bN2qP8m': [0, 1, 2, 3] 
+    'X6tM2qk8m': [0, 1, 2, 3] 
   };
 
 
@@ -547,7 +547,7 @@
         ...pet,
         hunger: clamp(pet.hunger - 20, 0, 100),
         happiness: clamp(pet.happiness + 5, 0, 100),
-        xp: clamp(pet.xp + 3, 0, 999) // 新增：喂食获得3亲密值
+        xp: clamp(pet.xp + 3, 0, 999) // 新增：投喂获得3亲密值
       };
     },
     play(pet) {
@@ -607,6 +607,8 @@
   const renameBtn = $('#rename-btn');
   const createPetBtn = $('#create-pet-btn');
   const actionsPanel = document.querySelector('.pet-stage .actions-panel');
+  // 聊天入口
+  const openChatBtn = document.getElementById('open-chat-btn');
   // 不允许释放固定OC
 
   // 新建OC对话框相关元素
@@ -620,6 +622,7 @@
   // ---------- State ----------
   let state = loadState();
   let petListExpanded = false; // 新增：OC列表展开状态
+
 
   // 控制新建OC按钮的显示状态
   function updateCreatePetButtonVisibility() {
@@ -1112,7 +1115,7 @@
       }
     }, { passive: true });
 
-    // 简易拖拽喂食/清洁：从下方操作按钮按下并拖到舞台释放
+    // 简易拖拽投喂/清洁：从下方操作按钮按下并拖到舞台释放
     const feedBtn = document.getElementById('feed-btn');
     const cleanBtn = document.getElementById('clean-btn');
 
@@ -1155,7 +1158,14 @@
       dragType = null;
     }
 
-    feedBtn && feedBtn.addEventListener('pointerdown', (e) => beginDrag('feed', e));
+    // 投喂按钮点击事件
+    feedBtn && feedBtn.addEventListener('click', () => {
+      const feedingDialog = document.getElementById('feeding-dialog');
+      if (feedingDialog) {
+        try { feedingDialog.showModal(); } catch (_) { feedingDialog.setAttribute('open','true'); }
+      }
+    });
+    
     cleanBtn && cleanBtn.addEventListener('pointerdown', (e) => beginDrag('clean', e));
   })();
 
@@ -1188,10 +1198,11 @@
     });
   }
 
-  feedBtn.addEventListener('click', () => { animatePet('feed'); updateSelected(ACTIONS.feed); appendInteractionLog('触发：喂食 🍖'); });
   // 打开/收起小游戏面板（浮动到OC容器，顶部对齐容器中心线）+ 玩耍动画
   playBtn.addEventListener('click', () => {
-    appendInteractionLog('触发：玩耍 🪀');
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    const petName = pet?.name || 'OC';
+    appendInteractionLog(`和${petName}玩耍 🪀`);
     animatePet('play');
     const panel = document.getElementById('play-panel');
     const stage = document.querySelector('.pet-stage');
@@ -1243,8 +1254,36 @@
       panel.removeAttribute('style');
     }
   });
-  sleepBtn.addEventListener('click', () => { animatePet('sleep'); updateSelected(ACTIONS.sleep); appendInteractionLog('触发：睡觉 🛌'); });
-  cleanBtn.addEventListener('click', () => { animatePet('clean'); updateSelected(ACTIONS.clean); appendInteractionLog('触发：清洁 🧼'); });
+  sleepBtn.addEventListener('click', () => { 
+    animatePet('sleep'); 
+    updateSelected(ACTIONS.sleep); 
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    const petName = pet?.name || 'OC';
+    appendInteractionLog(`陪${petName}睡觉 🛌`); 
+  });
+  
+  // 沐浴按钮点击事件 - 打开沐浴选择弹窗
+  cleanBtn.addEventListener('click', () => {
+    // 清除之前的沐浴结果
+    const resultDiv = document.getElementById('bathing-result');
+    if (resultDiv) {
+      resultDiv.style.display = 'none';
+      // 清除之前的消息
+      const existingMessage = resultDiv.querySelector('.bathing-message');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+    }
+    
+    // 清除选择状态
+    document.querySelectorAll('.bathing-option').forEach(o => o.classList.remove('selected'));
+    selectedBathingType = null;
+    
+    const bathingDialog = document.getElementById('bathing-dialog');
+    if (bathingDialog) {
+      try { bathingDialog.showModal(); } catch (_) { bathingDialog.setAttribute('open','true'); }
+    }
+  });
 
   // 防止点击工具条触发舞台点击粒子效果
   function stopStageEffects(ev) {
@@ -1981,7 +2020,13 @@
     const ans = (input?.value || '').trim();
     const item = RIDDLES[riddleIndex];
     if (!ans) { fb && (fb.textContent = '先输入答案呀～'); return; }
-    if (ans === item.a) { fb && (fb.textContent = '答对啦！奖励+'); rewardAfterMiniGame('riddle'); }
+    if (ans === item.a) { 
+      fb && (fb.textContent = '答对啦！奖励+'); 
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      appendInteractionLog(`和${petName}玩猜谜语 🎯`);
+      rewardAfterMiniGame('riddle'); 
+    }
     else { fb && (fb.textContent = '差一点点，再想想～'); }
   });
   document.getElementById('riddle-hint')?.addEventListener('click', () => {
@@ -2057,6 +2102,9 @@
     j && (j.textContent = JOKES[jokeIndex]);
   }
   document.getElementById('joke-laugh')?.addEventListener('click', () => {
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    const petName = pet?.name || 'OC';
+    appendInteractionLog(`给${petName}讲笑话 😂`);
     rewardAfterMiniGame('joke');
     const j = document.getElementById('joke-text');
     j && (j.textContent += ' 😂');
@@ -2113,6 +2161,9 @@
   document.getElementById('soup-answer')?.addEventListener('click', () => {
     const extra = document.getElementById('soup-extra');
     extra && (extra.textContent = '答案：' + SOUPS[soupIndex].a);
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    const petName = pet?.name || 'OC';
+    appendInteractionLog(`和${petName}玩海龟汤 🥣`);
     rewardAfterMiniGame('soup');
   });
   document.getElementById('soup-next')?.addEventListener('click', () => {
@@ -2138,6 +2189,9 @@
     const hit = ans.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(ans.toLowerCase());
     if (hit) {
       gf && (gf.textContent = '你猜对啦！🎉');
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      appendInteractionLog(`和${petName}玩海龟汤 🥣`);
       rewardAfterMiniGame('soup');
     } else {
       gf && (gf.textContent = '暂时不太对，再提问或继续推理～');
@@ -2160,7 +2214,14 @@
     const f = document.getElementById('number-feedback');
     const val = Number(i?.value || 0);
     if (!val) { f && (f.textContent = '请输入 1-20 的数字'); return; }
-    if (val === numberSecret) { f && (f.textContent = '你猜对了！🎉'); rewardAfterMiniGame('number'); initNumberGame(true); }
+    if (val === numberSecret) { 
+      f && (f.textContent = '你猜对了！🎉'); 
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      appendInteractionLog(`和${petName}玩猜数字 🎲`);
+      rewardAfterMiniGame('number'); 
+      initNumberGame(true); 
+    }
     else if (val < numberSecret) { f && (f.textContent = '再大一点～'); }
     else { f && (f.textContent = '再小一点～'); }
   });
@@ -2238,7 +2299,9 @@
         render();
         hideSelectPetDialog();
       });
-      appendInteractionLog('触发：光影切换 🎨');
+      const selectedPet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = selectedPet?.name || 'OC';
+      appendInteractionLog(`为${petName}切换光影 🎨`);
       
       selectPetList.appendChild(item);
     });
@@ -2477,7 +2540,7 @@
         const jitterY = (Math.random() - 0.5) * cellH * 0.8;
         y = clamp(Math.max(baseY, bottomBandTop) + jitterY, rect.height * 0.55, rect.height - 8);
       } else {
-        // 喂食/清洁：从各处往下落，起点覆盖全区域并允许略高/略低越界，增强自然感
+        // 投喂/清洁：从各处往下落，起点覆盖全区域并允许略高/略低越界，增强自然感
         const jitterY = (Math.random() - 0.5) * cellH * 0.9;
         y = baseY + jitterY - rect.height * 0.15 * Math.random();
       }
@@ -2485,7 +2548,8 @@
       if (kind === 'sleep') {
         setTimeout(() => createParticle(x, y, { mode: 'rise', emoji: '💤' }), delay);
       } else if (kind === 'feed') {
-        setTimeout(() => createParticle(x, y, { mode: 'rain', emoji: '🍖' }), delay);
+        // 移除固定的🍖粒子效果，现在使用动态食物粒子系统
+        // setTimeout(() => createParticle(x, y, { mode: 'rain', emoji: '🍖' }), delay);
       } else {
         const bubbles = [ '⚪', '🔵', '◌', '◯'];
         const emoji = bubbles[Math.floor(Math.random() * bubbles.length)];
@@ -2792,8 +2856,8 @@
 
     // 将直白文案转为可爱语气，并带上名字
     let cute = message;
-    if (message.includes('喂食')) {
-      cute = `给${safeName}喂食，咔嚓咔嚓真香！🍖`;
+    if (message.includes('投喂')) {
+      cute = `给${safeName}投喂，咔嚓咔嚓真香！🍖`;
     } else if (message.includes('清洁')) {
       cute = `帮${safeName}清洁，泡泡飞飞香香净净！🫧`;
     } else if (message.includes('睡觉')) {
@@ -2811,6 +2875,680 @@
     el.appendChild(line);
     // 保持最多 10 条，超出移除最旧
     while (el.childNodes.length > 10) el.removeChild(el.firstChild);
+  }
+
+  // ---------- OC 聊天 ----------
+  function renderChatForPet(petId) {
+    if (!chatMessagesEl) return;
+    chatMessagesEl.innerHTML = '';
+    const history = (chatState[petId] || []).slice(-50);
+    for (const msg of history) {
+      const line = document.createElement('div');
+      line.className = 'chat-line ' + (msg.role === 'user' ? 'from-user' : 'from-ai');
+      line.textContent = msg.content;
+      chatMessagesEl.appendChild(line);
+    }
+    
+    // 如果当前OC正在思考，显示思考状态
+    if (thinkingPetId === petId) {
+      const pet = state.pets.find((p) => p.id === petId);
+      if (pet) {
+        const thinkingLine = document.createElement('div');
+        thinkingLine.className = 'chat-line from-ai thinking';
+        thinkingLine.innerHTML = `<span class="thinking-text">${pet.name}正在思考中...</span><span class="thinking-dots">...</span>`;
+        chatMessagesEl.appendChild(thinkingLine);
+      }
+    }
+    
+    // 如果显示了思考状态但已经有AI回复，立即清除思考状态
+    if (thinkingPetId === petId && history.length > 0) {
+      const lastMessage = history[history.length - 1];
+      if (lastMessage.role === 'assistant') {
+        // 延迟一帧清除，确保UI更新完成
+        setTimeout(() => {
+          thinkingPetId = null;
+          renderChatForPet(petId);
+        }, 0);
+      }
+    }
+    
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }
+
+  let isChatSending = false;
+  let thinkingPetId = null; // 跟踪正在思考的OC
+  
+  async function sendChat() {
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    if (!pet || !chatInputEl) return;
+    const content = (chatInputEl.value || '').trim();
+    if (!content) return;
+    if (isChatSending) return;
+    chatInputEl.value = '';
+    // 禁用输入，避免重复触发
+    try { chatInputEl.disabled = true; } catch (_) {}
+    try {
+      if (chatSendBtn) {
+        chatSendBtn.disabled = true;
+        chatSendBtn.dataset.prevText = chatSendBtn.textContent || '';
+        chatSendBtn.textContent = '发送中…';
+      }
+    } catch (_) {}
+
+    // push user message
+    const pid = pet.id;
+    chatState[pid] = chatState[pid] || [];
+    chatState[pid].push({ role: 'user', content, ts: Date.now() });
+    saveChatState(chatState);
+    renderChatForPet(pid);
+    
+    // 添加思考中的临时消息
+    thinkingPetId = pid;
+    renderChatForPet(pid);
+
+    // call AI
+    const settings = loadAiSettings();
+    const baseUrl = (settings.baseUrl || '').replace(/\/$/, '');
+    const path = settings.path || '/v1/chat/completions';
+    const model = settings.model || 'gpt-3.5-turbo';
+    const apiKey = settings.apiKey || '';
+    if (!baseUrl || !apiKey) {
+      // 提示配置
+      openAiSettingsDialog(true);
+      // 同时追加系统提示
+      chatState[pid].push({ role: 'assistant', content: '请先在设置里配置 AI 接入信息～', ts: Date.now() });
+      saveChatState(chatState);
+      renderChatForPet(pid);
+      return;
+    }
+
+    const sysPrompt = `你现在是用户的OC角色"${pet.name}"（物种：${pet.species}${pet.stage ? '，时期：' + pet.stage : ''}）。用可爱、贴心、简短的中文第一人称回复，符合该OC的个性。`;
+    const recent = (chatState[pid] || []).slice(-20).map(m => ({ role: m.role, content: m.content }));
+    const messages = [ { role: 'system', content: sysPrompt }, ...recent ];
+
+    // 标记发送中
+    isChatSending = true;
+
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      };
+      // OpenRouter 需要附加这两个头以允许前端调用
+      if (/openrouter\.ai$/i.test(baseUrl.replace(/^https?:\/\//, '').split('/')[0])) {
+        headers['HTTP-Referer'] = (location?.origin || 'http://localhost');
+        headers['X-Title'] = (document?.title || 'OC Chat');
+      }
+      // Bearer 头同上，无需额外定制头。部分模型名形如 Qwen/Qwen2.5-7B-Instruct。
+
+      const body = JSON.stringify({ model, messages, temperature: 0.8, stream: false });
+
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      const maxRetries = 3;
+      let attempt = 0;
+      let data = null;
+      while (attempt <= maxRetries) {
+        const resp = await fetch(baseUrl + path, { method: 'POST', headers, body });
+        if (resp.ok) {
+          data = await resp.json();
+          break;
+        }
+        // 构造错误消息
+        let detail = '';
+        try { const j = await resp.json(); detail = j?.error?.message || j?.message || ''; } catch (_) {}
+        if (resp.status === 429 || resp.status >= 500) {
+          if (attempt < maxRetries) {
+            // 更新按钮文案提示重试
+            try { if (chatSendBtn) chatSendBtn.textContent = `发送中…(重试 ${attempt + 1}/${maxRetries})`; } catch (_) {}
+            // 解析 Retry-After 或退避时间
+            const ra = Number(resp.headers.get('Retry-After'));
+            const backoff = !Number.isNaN(ra) && ra > 0 ? ra * 1000 : (800 * Math.pow(2, attempt)) + Math.floor(Math.random() * 300);
+            await sleep(backoff);
+            attempt++;
+            continue;
+          }
+        }
+        let friendly = `请求失败 (HTTP ${resp.status})`;
+        if (resp.status === 401) friendly = '认证失败：请检查 API Key 是否正确/有效。';
+        else if (resp.status === 402) friendly = '支付/额度不足：请为账户充值，或选择免费/自部署的兼容接口。';
+        else if (resp.status === 403) friendly = '无权限：请检查模型权限、组织或域名白名单设置。';
+        else if (resp.status === 429) friendly = '请求过多：触发限流，请稍后重试或降低频率。';
+        else if (resp.status >= 500) friendly = '服务端异常：请稍后重试。';
+        throw new Error(friendly + (detail ? ' 详情：' + detail : ''));
+      }
+      if (!data) throw new Error('未获取到数据');
+      const reply = data?.choices?.[0]?.message?.content || '（没有返回内容）';
+      const arr = chatState[pid];
+      arr.push({ role: 'assistant', content: reply, ts: Date.now() });
+      saveChatState(chatState);
+      renderChatForPet(pid);
+    } catch (err) {
+      const arr = chatState[pid] || [];
+      arr.push({ role: 'assistant', content: '出错啦：' + (err?.message || String(err)), ts: Date.now() });
+      saveChatState(chatState);
+      renderChatForPet(pid);
+    } finally {
+      isChatSending = false;
+      thinkingPetId = null; // 清除思考状态
+      try { chatInputEl.disabled = false; } catch (_) {}
+      try {
+        if (chatSendBtn) {
+          chatSendBtn.disabled = false;
+          chatSendBtn.textContent = chatSendBtn.dataset.prevText || '发送';
+          delete chatSendBtn.dataset.prevText;
+        }
+      } catch (_) {}
+      chatInputEl && chatInputEl.focus();
+    }
+  }
+
+  // 聊天入口
+  openChatBtn && openChatBtn.addEventListener('click', () => {
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    const pid = pet?.id || '';
+    const url = new URL(location.origin + location.pathname.replace(/index\.html$/i, 'chat.html'));
+    if (pid) url.searchParams.set('pet', pid);
+    window.open(url.toString(), '_blank', 'noopener');
+  });
+
+  // ---------- 投喂系统 ----------
+  // 投喂选择弹窗
+  document.getElementById('takeout-option')?.addEventListener('click', () => {
+    const feedingDialog = document.getElementById('feeding-dialog');
+    const takeoutDialog = document.getElementById('takeout-dialog');
+    if (feedingDialog) feedingDialog.close();
+    if (takeoutDialog) {
+      try { takeoutDialog.showModal(); } catch (_) { takeoutDialog.setAttribute('open','true'); }
+    }
+  });
+
+  document.getElementById('homemade-option')?.addEventListener('click', () => {
+    const feedingDialog = document.getElementById('feeding-dialog');
+    const cookingDialog = document.getElementById('cooking-dialog');
+    if (feedingDialog) feedingDialog.close();
+    if (cookingDialog) {
+      try { cookingDialog.showModal(); } catch (_) { cookingDialog.setAttribute('open','true'); }
+    }
+  });
+
+  document.getElementById('feeding-cancel')?.addEventListener('click', () => {
+    const feedingDialog = document.getElementById('feeding-dialog');
+    if (feedingDialog) feedingDialog.close();
+  });
+
+  // 外卖选择
+  let selectedTakeout = null;
+  document.querySelectorAll('.takeout-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.takeout-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      selectedTakeout = item.dataset.food;
+    });
+  });
+
+  document.getElementById('takeout-back')?.addEventListener('click', () => {
+    const takeoutDialog = document.getElementById('takeout-dialog');
+    const feedingDialog = document.getElementById('feeding-dialog');
+    if (takeoutDialog) takeoutDialog.close();
+    if (feedingDialog) {
+      try { feedingDialog.showModal(); } catch (_) { feedingDialog.setAttribute('open','true'); }
+    }
+  });
+
+  document.getElementById('takeout-cancel')?.addEventListener('click', () => {
+    const takeoutDialog = document.getElementById('takeout-dialog');
+    if (takeoutDialog) takeoutDialog.close();
+  });
+
+  // 烹饪选择
+  let selectedMainIngredient = null;
+  let selectedSideIngredient = null;
+
+  document.querySelectorAll('.ingredient-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const ingredient = item.dataset.ingredient;
+      const isMainIngredient = ['chicken', 'fish', 'beef', 'pork', 'tofu', 'egg'].includes(ingredient);
+      
+      if (isMainIngredient) {
+        document.querySelectorAll('.ingredient-item[data-ingredient="chicken"], .ingredient-item[data-ingredient="fish"], .ingredient-item[data-ingredient="beef"], .ingredient-item[data-ingredient="pork"], .ingredient-item[data-ingredient="tofu"], .ingredient-item[data-ingredient="egg"]').forEach(i => i.classList.remove('selected'));
+        selectedMainIngredient = ingredient;
+      } else {
+        document.querySelectorAll('.ingredient-item[data-ingredient="carrot"], .ingredient-item[data-ingredient="broccoli"], .ingredient-item[data-ingredient="tomato"], .ingredient-item[data-ingredient="potato"], .ingredient-item[data-ingredient="onion"], .ingredient-item[data-ingredient="mushroom"]').forEach(i => i.classList.remove('selected'));
+        selectedSideIngredient = ingredient;
+      }
+      
+      item.classList.add('selected');
+      
+      // 清除之前的烹饪结果
+      const resultDiv = document.getElementById('cooking-result');
+      if (resultDiv) {
+        resultDiv.style.display = 'none';
+        // 清除之前的消息
+        const existingMessage = resultDiv.querySelector('.cooking-message');
+        if (existingMessage) {
+          existingMessage.remove();
+        }
+      }
+    });
+  });
+
+  // 获取烹饪等级信息
+  function getGradeInfo(dishName) {
+    if (dishName.includes('（神明级）')) {
+      return { type: 'divine', emoji: '✨', text: '灶神恩赐' };
+    } else if (dishName.includes('（大师级）')) {
+      return { type: 'master', emoji: '👍', text: '人间美味' };
+    } else if (dishName.includes('（优秀级）')) {
+      return { type: 'excellent', emoji: '😊', text: '家的味道' };
+    } else if (dishName.includes('（凑合级）')) {
+      return { type: 'passable', emoji: '🤨', text: '食堂级手笔' };
+    } else if (dishName.includes('（抽象派）')) {
+      return { type: 'abstract', emoji: '😶', text: '薛定谔的菜' };
+    } else if (dishName.includes('（轻度翻车）')) {
+      return { type: 'mild_fail', emoji: '🌫', text: '厨房事故' };
+    } else if (dishName.includes('（严重翻车）')) {
+      return { type: 'severe_fail', emoji: '🌀', text: '黑暗料理' };
+    } else if (dishName.includes('（灭世级）')) {
+      return { type: 'apocalypse', emoji: '☠️', text: '来自地狱的问候' };
+    } else {
+      return { type: 'excellent', emoji: '🍽️', text: '烹饪结果' };
+    }
+  }
+
+  // 烹饪结果生成 - 固定几种烹饪结果类型
+  function generateCookingResult(main, side) {
+    const dishCombinations = {
+      'chicken': {
+        'carrot': { emoji: '🍗', name: '胡萝卜炖鸡', particles: ['🥕', '🍗', '💛'] },
+        'broccoli': { emoji: '🥘', name: '西兰花炒鸡', particles: ['🥦', '🍗', '💚'] },
+        'tomato': { emoji: '🍅', name: '番茄炒鸡', particles: ['🍅', '🍗', '❤️'] },
+        'potato': { emoji: '🥔', name: '土豆炖鸡', particles: ['🥔', '🍗', '💛'] },
+        'onion': { emoji: '🧅', name: '洋葱炒鸡', particles: ['🧅', '🍗', '🤍'] },
+        'mushroom': { emoji: '🍄', name: '蘑菇炖鸡', particles: ['🍄', '🍗', '🤎'] }
+      },
+      'fish': {
+        'carrot': { emoji: '🐟', name: '胡萝卜蒸鱼', particles: ['🥕', '🐟', '💙'] },
+        'broccoli': { emoji: '🥘', name: '西兰花蒸鱼', particles: ['🥦', '🐟', '💚'] },
+        'tomato': { emoji: '🍅', name: '番茄蒸鱼', particles: ['🍅', '🐟', '❤️'] },
+        'potato': { emoji: '🥔', name: '土豆蒸鱼', particles: ['🥔', '🐟', '💛'] },
+        'onion': { emoji: '🧅', name: '洋葱蒸鱼', particles: ['🧅', '🐟', '🤍'] },
+        'mushroom': { emoji: '🍄', name: '蘑菇蒸鱼', particles: ['🍄', '🐟', '🤎'] }
+      },
+      'beef': {
+        'carrot': { emoji: '🥩', name: '胡萝卜炖牛肉', particles: ['🥕', '🥩', '❤️'] },
+        'broccoli': { emoji: '🥘', name: '西兰花炒牛肉', particles: ['🥦', '🥩', '💚'] },
+        'tomato': { emoji: '🍅', name: '番茄炖牛肉', particles: ['🍅', '🥩', '❤️'] },
+        'potato': { emoji: '🥔', name: '土豆炖牛肉', particles: ['🥔', '🥩', '💛'] },
+        'onion': { emoji: '🧅', name: '洋葱炒牛肉', particles: ['🧅', '🥩', '🤍'] },
+        'mushroom': { emoji: '🍄', name: '蘑菇炖牛肉', particles: ['🍄', '🥩', '🤎'] }
+      },
+      'pork': {
+        'carrot': { emoji: '🥓', name: '胡萝卜炒猪肉', particles: ['🥕', '🥓', '💗'] },
+        'broccoli': { emoji: '🥘', name: '西兰花炒猪肉', particles: ['🥦', '🥓', '💚'] },
+        'tomato': { emoji: '🍅', name: '番茄炒猪肉', particles: ['🍅', '🥓', '❤️'] },
+        'potato': { emoji: '🥔', name: '土豆炖猪肉', particles: ['🥔', '🥓', '💛'] },
+        'onion': { emoji: '🧅', name: '洋葱炒猪肉', particles: ['🧅', '🥓', '🤍'] },
+        'mushroom': { emoji: '🍄', name: '蘑菇炒猪肉', particles: ['🍄', '🥓', '🤎'] }
+      },
+      'tofu': {
+        'carrot': { emoji: '🧈', name: '胡萝卜炒豆腐', particles: ['🥕', '🧈', '💛'] },
+        'broccoli': { emoji: '🥘', name: '西兰花炒豆腐', particles: ['🥦', '🧈', '💚'] },
+        'tomato': { emoji: '🍅', name: '番茄炒豆腐', particles: ['🍅', '🧈', '❤️'] },
+        'potato': { emoji: '🥔', name: '土豆炒豆腐', particles: ['🥔', '🧈', '💛'] },
+        'onion': { emoji: '🧅', name: '洋葱炒豆腐', particles: ['🧅', '🧈', '🤍'] },
+        'mushroom': { emoji: '🍄', name: '蘑菇炒豆腐', particles: ['🍄', '🧈', '🤎'] }
+      },
+      'egg': {
+        'carrot': { emoji: '🥚', name: '胡萝卜炒蛋', particles: ['🥕', '🥚', '💛'] },
+        'broccoli': { emoji: '🥘', name: '西兰花炒蛋', particles: ['🥦', '🥚', '💚'] },
+        'tomato': { emoji: '🍅', name: '番茄炒蛋', particles: ['🍅', '🥚', '❤️'] },
+        'potato': { emoji: '🥔', name: '土豆炒蛋', particles: ['🥔', '🥚', '💛'] },
+        'onion': { emoji: '🧅', name: '洋葱炒蛋', particles: ['🧅', '🥚', '🤍'] },
+        'mushroom': { emoji: '🍄', name: '蘑菇炒蛋', particles: ['🍄', '🥚', '🤎'] }
+      }
+    };
+
+    // 获取基础菜品信息
+    let baseDish = { emoji: '🍽️', name: '美味料理', particles: ['🍽️', '✨', '💫'] };
+    if (dishCombinations[main] && dishCombinations[main][side]) {
+      baseDish = dishCombinations[main][side];
+    }
+
+    // 全新的烹饪等级系统
+    const cookingResults = [
+      // 成功阵营（好吃到发光）
+      {
+        type: 'divine',
+        emoji: '✨',
+        suffix: '（神明级）',
+        title: '灶神恩赐',
+        message: '菜品散发金色圣光，仿佛有凤凰环绕。好吃到像看到了天使！',
+        particles: ['✨', '🌟', '💫', '🦅', '🌈'],
+        probability: 0.08
+      },
+      {
+        type: 'master',
+        emoji: '👍',
+        suffix: '（大师级）',
+        title: '人间美味',
+        message: '色香味俱全，无可挑剔。TA会掏出手机疯狂拍照，和TA的朋友炫耀！',
+        particles: ['👍', '✨', '💫', '📸', '💖'],
+        probability: 0.12
+      },
+      {
+        type: 'excellent',
+        emoji: '😊',
+        suffix: '（优秀级）',
+        title: '家的味道',
+        message: '扎实、美味、令人满意的料理。虽不惊艳，但绝对不会出错，TA很满意！',
+        particles: ['😊', '✨', '💛', '🏠'],
+        probability: 0.20
+      },
+      // 中间阵营（能吃，但别有太多期待）
+      {
+        type: 'passable',
+        emoji: '🤨',
+        suffix: '（凑合级）',
+        title: '大锅饭',
+        message: '盐没搅匀，火候差了点。TA一边吃一边小声嘀咕，但好歹能填饱肚子...',
+        particles: ['🤨', '💭', '😐', '🍽️'],
+        probability: 0.25
+      },
+      {
+        type: 'abstract',
+        emoji: '😶',
+        suffix: '（抽象派）',
+        title: '薛定谔的菜',
+        message: '味道可能还行，但外形诡异到无从下口。TA看着这盘"创意料理"陷入了沉思...',
+        particles: ['😶', '🎨', '❓', '💭'],
+        probability: 0.20
+      },
+      // 失败阵营（建议重开）
+      {
+        type: 'mild_fail',
+        emoji: '🌫',
+        suffix: '（轻度翻车）',
+        title: '厨房事故',
+        message: '稍微过火或夹生，TA皱起眉头，但出于礼貌还是勉强会吃两口...',
+        particles: ['🌫', '💦', '😰', '💨'],
+        probability: 0.10
+      },
+      {
+        type: 'severe_fail',
+        emoji: '🌀',
+        suffix: '（严重翻车）',
+        title: '黑暗料理',
+        message: '食材发生不可名状的化学反应，颜色诡异、冒怪泡，TA的理智值持续下降...',
+        particles: ['🌀', '💀', '👻', '💩'],
+        probability: 0.04
+      },
+      {
+        type: 'apocalypse',
+        emoji: '☠️',
+        suffix: '（灭世品）',
+        title: '来自地狱的问候',
+        message: '已不是食物，而是灾难"。TA吃了可能会病重！',
+        particles: ['☠️', '💀', '🔥', '☢️'],
+        probability: 0.01
+      }
+    ];
+
+    // 根据概率随机选择烹饪结果
+    const random = Math.random();
+    let cumulativeProbability = 0;
+    let selectedResult = cookingResults[0]; // 默认第一个
+
+    for (const result of cookingResults) {
+      cumulativeProbability += result.probability;
+      if (random <= cumulativeProbability) {
+        selectedResult = result;
+        break;
+      }
+    }
+
+    // 组合菜品粒子和等级效果粒子
+    let finalParticles = [...baseDish.particles];
+    
+    // 根据烹饪等级添加额外的效果粒子
+    if (selectedResult.type === 'divine') {
+      finalParticles = finalParticles.concat(['✨', '🌟', '💫', '🦅', '🌈']);
+    } else if (selectedResult.type === 'master') {
+      finalParticles = finalParticles.concat(['👍', '✨', '💫', '📸', '💖']);
+    } else if (selectedResult.type === 'excellent') {
+      finalParticles = finalParticles.concat(['😊', '✨', '💛', '🏠']);
+    } else if (selectedResult.type === 'passable') {
+      finalParticles = finalParticles.concat(['🤨', '💭', '😐', '🍽️']);
+    } else if (selectedResult.type === 'abstract') {
+      finalParticles = finalParticles.concat(['😶', '🎨', '❓', '💭']);
+    } else if (selectedResult.type === 'mild_fail') {
+      finalParticles = finalParticles.concat(['🌫', '💦', '😰', '💨']);
+    } else if (selectedResult.type === 'severe_fail') {
+      finalParticles = finalParticles.concat(['🌀', '💀', '👻', '💩']);
+    } else if (selectedResult.type === 'apocalypse') {
+      finalParticles = finalParticles.concat(['☠️', '💀', '🔥', '☢️']);
+    }
+
+    // 返回组合后的结果
+    return {
+      emoji: selectedResult.emoji,
+      name: baseDish.name + selectedResult.suffix,
+      particles: finalParticles,
+      message: selectedResult.message,
+      grade: selectedResult.type,
+      gradeEmoji: selectedResult.emoji,
+      gradeText: selectedResult.title || '烹饪结果'
+    };
+  }
+
+  document.getElementById('cooking-cook')?.addEventListener('click', () => {
+    if (!selectedMainIngredient || !selectedSideIngredient) {
+      alert('请选择主料和配菜！');
+      return;
+    }
+
+    const result = generateCookingResult(selectedMainIngredient, selectedSideIngredient);
+    const resultDiv = document.getElementById('cooking-result');
+    const dishName = document.querySelector('.dish-name');
+    const cookingGrade = document.getElementById('cooking-grade');
+    const gradeEmoji = document.querySelector('.grade-emoji');
+    const gradeText = document.querySelector('.grade-text');
+
+    if (resultDiv && dishName && cookingGrade && gradeEmoji && gradeText) {
+      // 先隐藏结果区域，清除之前的内容
+      resultDiv.style.display = 'none';
+      
+      // 清除之前的消息（如果存在）
+      const existingMessage = resultDiv.querySelector('.cooking-message');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+      
+      // 短暂延迟后显示新结果
+      setTimeout(() => {
+        dishName.textContent = result.name;
+        resultDiv.style.display = 'block';
+        
+        // 显示烹饪等级
+        gradeEmoji.textContent = result.gradeEmoji;
+        gradeText.textContent = result.gradeText;
+        
+        // 移除之前的等级样式
+        cookingGrade.className = 'cooking-grade';
+        cookingGrade.classList.add(result.grade);
+        
+        // 添加烹饪结果消息显示
+        const resultMessage = document.createElement('div');
+        resultMessage.className = 'cooking-message';
+        resultMessage.textContent = result.message;
+        resultMessage.style.cssText = 'margin-top: 8px; padding: 8px; background: rgba(255, 134, 178, 0.1); border-radius: 6px; text-align: center; font-size: 14px; color: #666;';
+        
+        resultDiv.appendChild(resultMessage);
+      }, 100);
+    }
+
+    // 延迟执行投喂动作
+    setTimeout(() => {
+      const cookingDialog = document.getElementById('cooking-dialog');
+      if (cookingDialog) cookingDialog.close();
+      
+      // 执行投喂动作
+      animatePet('feed');
+      updateSelected(ACTIONS.feed);
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      
+      appendInteractionLog(`亲手烹饪了${result.name}给${petName}吃 - ${result.message}`);
+      
+      // 保存到互动记录
+      saveInteractionToMemory(`亲手烹饪了${result.name}给${petName}吃 - ${result.message}`);
+      
+      // 显示食物粒子效果
+      showFoodParticles(result.particles);
+    }, 5000);
+  });
+
+  document.getElementById('cooking-back')?.addEventListener('click', () => {
+    const cookingDialog = document.getElementById('cooking-dialog');
+    const feedingDialog = document.getElementById('feeding-dialog');
+    if (cookingDialog) cookingDialog.close();
+    if (feedingDialog) {
+      try { feedingDialog.showModal(); } catch (_) { feedingDialog.setAttribute('open','true'); }
+    }
+  });
+
+  document.getElementById('cooking-cancel')?.addEventListener('click', () => {
+    const cookingDialog = document.getElementById('cooking-dialog');
+    if (cookingDialog) cookingDialog.close();
+  });
+
+  // 外卖选择完成
+  document.querySelectorAll('.takeout-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (selectedTakeout) {
+        const foodNames = {
+          'pizza': '披萨',
+          'burger': '汉堡',
+          'sushi': '寿司',
+          'noodles': '拉面',
+          'rice': '炒饭',
+          'salad': '沙拉'
+        };
+        
+        const foodParticles = {
+          'pizza': ['🍕', '🧀', '🍅', '💛'],
+          'burger': ['🍔', '🥩', '🧀', '💛'],
+          'sushi': ['🍣', '🐟', '🍚', '💙'],
+          'noodles': ['🍜', '🥢', '🌶️', '❤️'],
+          'rice': ['🍚', '🥢', '🥕', '💛'],
+          'salad': ['🥗', '🥬', '🥕', '💚']
+        };
+        
+        const foodName = foodNames[selectedTakeout] || '外卖';
+        const particles = foodParticles[selectedTakeout] || ['🍽️', '✨', '💫'];
+        
+        setTimeout(() => {
+          const takeoutDialog = document.getElementById('takeout-dialog');
+          if (takeoutDialog) takeoutDialog.close();
+          
+          // 执行投喂动作
+          animatePet('feed');
+          updateSelected(ACTIONS.feed);
+                  const pet = state.pets.find((p) => p.id === state.selectedPetId);
+        const petName = pet?.name || 'OC';
+        
+        appendInteractionLog(`给${petName}点了${foodName}外卖`);
+        
+        // 保存到互动记录
+        saveInteractionToMemory(`给${petName}点了${foodName}外卖`);
+          
+          // 显示食物粒子效果
+          showFoodParticles(particles);
+        }, 500);
+      }
+    });
+  });
+
+  // 显示食物粒子效果
+  function showFoodParticles(particles) {
+    const petEffects = document.getElementById('pet-effects');
+    if (!petEffects) return;
+    
+    // 清除之前的粒子
+    petEffects.innerHTML = '';
+    
+    // 创建多个粒子
+    for (let i = 0; i < 15; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'food-particle';
+      particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+      
+      // 随机位置和动画
+      const startX = Math.random() * 100;
+      const startY = Math.random() * 100;
+      const endX = startX + (Math.random() - 0.5) * 60;
+      const endY = startY - Math.random() * 40 - 20;
+      const delay = Math.random() * 1000;
+      const duration = 2000 + Math.random() * 1000;
+      
+      particle.style.cssText = `
+        position: absolute;
+        left: ${startX}%;
+        top: ${startY}%;
+        font-size: ${16 + Math.random() * 12}px;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1000;
+        animation: foodParticleFloat ${duration}ms ease-out ${delay}ms forwards;
+      `;
+      
+      petEffects.appendChild(particle);
+      
+      // 自动移除粒子
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, delay + duration + 1000);
+    }
+  }
+
+  // 保存互动记录到内存
+  function saveInteractionToMemory(message) {
+    const pet = state.pets.find((p) => p.id === state.selectedPetId);
+    if (!pet) return;
+    
+    // 解析互动类型
+    let action = 'other';
+    if (message.includes('投喂') || message.includes('外卖') || message.includes('烹饪')) action = 'feed';
+    else if (message.includes('清洁')) action = 'clean';
+    else if (message.includes('睡觉')) action = 'sleep';
+    else if (message.includes('玩耍')) action = 'play';
+    else if (message.includes('猜谜语')) action = 'riddle';
+    else if (message.includes('讲笑话')) action = 'joke';
+    else if (message.includes('海龟汤')) action = 'soup';
+    else if (message.includes('猜数字')) action = 'number';
+    
+    try {
+      const interactionLog = JSON.parse(localStorage.getItem('oc-pet-system/interaction-log') || '{}');
+      const petInteractions = interactionLog[pet.id] || [];
+      
+      // 添加新互动记录
+      petInteractions.push({
+        action: action,
+        message: message,
+        timestamp: Date.now()
+      });
+      
+      // 保持最近50条记录
+      if (petInteractions.length > 50) {
+        petInteractions.splice(0, petInteractions.length - 50);
+      }
+      
+      interactionLog[pet.id] = petInteractions;
+      localStorage.setItem('oc-pet-system/interaction-log', JSON.stringify(interactionLog));
+    } catch (err) {
+      console.error('保存互动记录失败:', err);
+    }
   }
 
   // 初始化媒体背景控制（页面加载时）
@@ -2931,5 +3669,275 @@
       location.reload();
     });
   }
+
+  // ---------- 沐浴系统 ----------
+  let selectedBathingType = null;
+
+  // 沐浴方式选择
+  document.querySelectorAll('.bathing-option').forEach(option => {
+    option.addEventListener('click', () => {
+      document.querySelectorAll('.bathing-option').forEach(o => o.classList.remove('selected'));
+      option.classList.add('selected');
+      selectedBathingType = option.dataset.bathing;
+      
+      // 清除之前的沐浴结果
+      const resultDiv = document.getElementById('bathing-result');
+      if (resultDiv) {
+        resultDiv.style.display = 'none';
+        const existingMessage = resultDiv.querySelector('.bathing-message');
+        if (existingMessage) {
+          existingMessage.remove();
+        }
+      }
+    });
+  });
+
+  // 生成沐浴结果
+  function generateBathingResult(bathingType) {
+    const bathingEffects = {
+      'quick': {
+        name: '快速冲澡',
+        baseCleanliness: 30,
+        baseHappiness: 5,
+        baseEnergy: -5
+      },
+      'bubble': {
+        name: '泡泡浴',
+        baseCleanliness: 45,
+        baseHappiness: 15,
+        baseEnergy: -10
+      },
+      'spa': {
+        name: 'SPA护理',
+        baseCleanliness: 60,
+        baseHappiness: 25,
+        baseEnergy: -15
+      },
+      'magical': {
+        name: '魔法沐浴',
+        baseCleanliness: 80,
+        baseHappiness: 40,
+        baseEnergy: -20
+      }
+    };
+
+    const baseEffect = bathingEffects[bathingType] || bathingEffects['quick'];
+
+    // 沐浴等级系统
+    const bathingGrades = [
+      {
+        type: 'perfect',
+        emoji: '✨',
+        title: '完美沐浴',
+        message: '超乎想象地好！TA焕发光彩，仿佛重生一般！',
+        particles: ['✨', '🌟', '💫', '🌈', '🦋'],
+        cleanlinessBonus: 1.5,
+        happinessBonus: 1.5,
+        probability: 0.10
+      },
+      {
+        type: 'good',
+        emoji: '😊',
+        title: '舒适沐浴',
+        message: '沐浴非常舒适，TA感觉身心愉悦，精神焕发！',
+        particles: ['😊', '✨', '💫', '🌸'],
+        cleanlinessBonus: 1.2,
+        happinessBonus: 1.2,
+        probability: 0.25
+      },
+      {
+        type: 'normal',
+        emoji: '🛁',
+        title: '普通沐浴',
+        message: '很不错，TA感觉清爽舒适。',
+        particles: ['🛁', '💧', '✨'],
+        cleanlinessBonus: 1.0,
+        happinessBonus: 1.0,
+        probability: 0.40
+      },
+      {
+        type: 'poor',
+        emoji: '😐',
+        title: '一般沐浴',
+        message: '一般，TA感觉还行，但没什么特别的感觉。',
+        particles: ['😐', '💧', '💭'],
+        cleanlinessBonus: 0.8,
+        happinessBonus: 0.8,
+        probability: 0.20
+      },
+      {
+        type: 'terrible',
+        emoji: '😰',
+        title: '糟糕沐浴',
+        message: '沐浴效果很差，OC感觉不舒服，甚至有点后悔...',
+        particles: ['😰', '💦', '💨', '💧'],
+        cleanlinessBonus: 0.5,
+        happinessBonus: 0.5,
+        probability: 0.05
+      }
+    ];
+
+    // 根据概率随机选择沐浴等级
+    const random = Math.random();
+    let cumulativeProbability = 0;
+    let selectedGrade = bathingGrades[0];
+
+    for (const grade of bathingGrades) {
+      cumulativeProbability += grade.probability;
+      if (random <= cumulativeProbability) {
+        selectedGrade = grade;
+        break;
+      }
+    }
+
+    // 计算最终效果
+    const finalCleanliness = Math.round(baseEffect.baseCleanliness * selectedGrade.cleanlinessBonus);
+    const finalHappiness = Math.round(baseEffect.baseHappiness * selectedGrade.happinessBonus);
+    const finalEnergy = baseEffect.baseEnergy;
+
+    return {
+      name: baseEffect.name,
+      grade: selectedGrade.type,
+      gradeEmoji: selectedGrade.emoji,
+      gradeTitle: selectedGrade.title,
+      message: selectedGrade.message,
+      particles: selectedGrade.particles,
+      cleanliness: finalCleanliness,
+      happiness: finalHappiness,
+      energy: finalEnergy
+    };
+  }
+
+  // 开始沐浴按钮事件
+  document.getElementById('bathing-start')?.addEventListener('click', () => {
+    if (!selectedBathingType) {
+      alert('请选择沐浴方式！');
+      return;
+    }
+
+    const result = generateBathingResult(selectedBathingType);
+    const resultDiv = document.getElementById('bathing-result');
+    const effectName = document.querySelector('.effect-name');
+    const bathingGrade = document.getElementById('bathing-grade');
+    const gradeEmoji = document.querySelector('#bathing-grade .grade-emoji');
+    const gradeText = document.querySelector('#bathing-grade .grade-text');
+
+    if (resultDiv && effectName && bathingGrade && gradeEmoji && gradeText) {
+      // 先隐藏结果区域，清除之前的内容
+      resultDiv.style.display = 'none';
+      
+      // 清除之前的消息
+      const existingMessage = resultDiv.querySelector('.bathing-message');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+      
+      // 短暂延迟后显示新结果
+      setTimeout(() => {
+        effectName.textContent = result.name;
+        resultDiv.style.display = 'block';
+        
+        // 显示沐浴等级
+        gradeEmoji.textContent = result.gradeEmoji;
+        gradeText.textContent = result.gradeTitle;
+        
+        // 移除之前的等级样式
+        bathingGrade.className = 'bathing-grade';
+        bathingGrade.classList.add(result.grade);
+        
+        // 添加沐浴结果消息显示
+        const resultMessage = document.createElement('div');
+        resultMessage.className = 'bathing-message';
+        resultMessage.textContent = result.message;
+        resultMessage.style.cssText = 'margin-top: 8px; padding: 8px; background: rgba(100, 149, 237, 0.1); border-radius: 6px; text-align: center; font-size: 14px; color: #666;';
+        
+        resultDiv.appendChild(resultMessage);
+      }, 100);
+    }
+
+    // 延迟执行沐浴动作
+    setTimeout(() => {
+      const bathingDialog = document.getElementById('bathing-dialog');
+      if (bathingDialog) bathingDialog.close();
+      
+      // 执行沐浴动作
+      animatePet('clean');
+      
+      // 更新OC状态
+      updateSelected((pet) => ({
+        ...pet,
+        cleanliness: clamp(pet.cleanliness + result.cleanliness, 0, 100),
+        happiness: clamp(pet.happiness + result.happiness, 0, 100),
+        energy: clamp(pet.energy + result.energy, 0, 100),
+        xp: clamp(pet.xp + 4, 0, 999) // 沐浴获得4亲密值
+      }));
+      
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      
+      appendInteractionLog(`给${petName}做了${result.name} - ${result.message}`);
+      saveInteractionToMemory(`给${petName}做了${result.name} - ${result.message}`);
+      
+      // 显示沐浴粒子效果
+      showBathingParticles(result.particles);
+    }, 4000);
+  });
+
+  // 沐浴弹窗返回按钮
+  document.getElementById('bathing-back')?.addEventListener('click', () => {
+    const bathingDialog = document.getElementById('bathing-dialog');
+    if (bathingDialog) bathingDialog.close();
+  });
+
+  // 沐浴弹窗取消按钮
+  document.getElementById('bathing-cancel')?.addEventListener('click', () => {
+    const bathingDialog = document.getElementById('bathing-dialog');
+    if (bathingDialog) bathingDialog.close();
+  });
+
+  // 显示沐浴粒子效果
+  function showBathingParticles(particles) {
+    const petEffects = document.getElementById('pet-effects');
+    if (!petEffects) return;
+    
+    // 清除之前的粒子
+    petEffects.innerHTML = '';
+    
+    // 创建多个粒子
+    for (let i = 0; i < 20; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'bathing-particle';
+      particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+      
+      // 随机位置和动画
+      const startX = Math.random() * 100;
+      const startY = Math.random() * 100;
+      const endX = startX + (Math.random() - 0.5) * 80;
+      const endY = startY - Math.random() * 60 - 30;
+      const delay = Math.random() * 1500;
+      const duration = 2500 + Math.random() * 1500;
+      
+      particle.style.cssText = `
+        position: absolute;
+        left: ${startX}%;
+        top: ${startY}%;
+        font-size: ${18 + Math.random() * 16}px;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1000;
+        animation: bathingParticleFloat ${duration}ms ease-out ${delay}ms forwards;
+      `;
+      
+      petEffects.appendChild(particle);
+      
+      // 自动移除粒子
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, delay + duration + 1000);
+    }
+  }
 })();
+
 
