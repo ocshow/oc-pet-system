@@ -235,7 +235,7 @@
   // 处理手机物理返回键：如果没有有效的历史记录，则返回到主页
   (function ensureBackNavigatesToMain() {
     try {
-      const mainPageUrl = location.origin + location.pathname.replace(/chat\.html$/i, 'index.html');
+      const mainPageUrl = new URL('index.html', location.href).href;
       // 如果直接打开了 chat.html（无同源 referrer），注入一个历史记录以触发 popstate
       const hasSameOriginReferrer = document.referrer && (() => {
         try { return new URL(document.referrer).origin === location.origin; } catch (_) { return false; }
@@ -266,7 +266,7 @@
         window.close();
       } else {
         console.log('导航回主页');
-        const mainPageUrl = location.origin + location.pathname.replace(/chat\.html$/i, 'index.html');
+        const mainPageUrl = new URL('index.html', location.href).href;
         console.log('目标URL:', mainPageUrl);
         window.location.href = mainPageUrl;
       }

@@ -1,10 +1,13 @@
-const CACHE_NAME = 'oc-pet-cache-v1';
+const CACHE_NAME = 'oc-pet-cache-v2';
+// 使用相对 scope 的 URL，避免在子路径或自定义域名下 404
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/manifest.webmanifest'
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/app.js',
+  './js/chat.js',
+  './chat.html',
+  './manifest.webmanifest'
 ];
 
 self.addEventListener('install', (event) => {
