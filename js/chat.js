@@ -232,6 +232,25 @@
   updateChatTitle();
   createSampleInteractions(); // 创建示例互动记录
   
+  // 处理手机物理返回键：如果没有有效的历史记录，则返回到主页
+  (function ensureBackNavigatesToMain() {
+    try {
+      const mainPageUrl = location.origin + location.pathname.replace(/chat\.html$/i, 'index.html');
+      // 如果直接打开了 chat.html（无同源 referrer），注入一个历史记录以触发 popstate
+      const hasSameOriginReferrer = document.referrer && (() => {
+        try { return new URL(document.referrer).origin === location.origin; } catch (_) { return false; }
+      })();
+      if (!hasSameOriginReferrer) {
+        history.replaceState({ chat: true }, '');
+        history.pushState({ chat: true }, '');
+      }
+      window.addEventListener('popstate', () => {
+        // 无论是否有上页，都确保返回到主页面
+        location.href = mainPageUrl;
+      });
+    } catch (_) {}
+  })();
+  
   // 调试：检查返回按钮是否存在
   console.log('返回按钮元素:', chatBackBtn);
   if (!chatBackBtn) {
