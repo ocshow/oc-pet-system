@@ -3074,11 +3074,8 @@
     const chatPath = basePath + (basePath.endsWith('/') ? 'chat.html' : '/chat.html');
     const url = new URL(chatPath, location.origin);
     if (pid) url.searchParams.set('pet', pid);
-    // 先尝试新窗口打开；若被拦截或失败，则同窗口跳转
-    const opened = window.open(url.toString(), '_blank', 'noopener,noreferrer');
-    if (!opened) {
-      location.href = url.toString();
-    }
+    // 同窗口跳转，保留历史记录，便于手机返回到主页面
+    location.href = url.toString();
   });
 
   // ---------- 投喂系统 ----------
