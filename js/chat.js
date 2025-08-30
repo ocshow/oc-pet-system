@@ -235,7 +235,9 @@
   // 处理手机物理返回键：如果没有有效的历史记录，则返回到主页
   (function ensureBackNavigatesToMain() {
     try {
-      const mainPageUrl = new URL('index.html', location.href).href;
+      // 直接使用主域名，这是最可靠的方案
+      const mainPageUrl = 'https://aocpal.7752099.xyz';
+      
       // 如果直接打开了 chat.html（无同源 referrer），注入一个历史记录以触发 popstate
       const hasSameOriginReferrer = document.referrer && (() => {
         try { return new URL(document.referrer).origin === location.origin; } catch (_) { return false; }
@@ -246,9 +248,12 @@
       }
       window.addEventListener('popstate', () => {
         // 无论是否有上页，都确保返回到主页面
+        console.log('物理返回键触发，跳转到:', mainPageUrl);
         location.href = mainPageUrl;
       });
-    } catch (_) {}
+    } catch (err) {
+      console.error('返回导航设置失败:', err);
+    }
   })();
   
   // 调试：检查返回按钮是否存在
@@ -256,6 +261,12 @@
   if (!chatBackBtn) {
     console.error('未找到返回按钮元素！');
   }
+  
+  // 调试：输出当前页面信息
+  console.log('当前页面URL:', location.href);
+  console.log('当前路径:', location.pathname);
+  console.log('当前域名:', location.origin);
+  console.log('Referrer:', document.referrer);
   
   // 返回按钮
   chatBackBtn && chatBackBtn.addEventListener('click', () => {
@@ -266,18 +277,23 @@
         window.close();
       } else {
         console.log('导航回主页');
-        const mainPageUrl = new URL('index.html', location.href).href;
+        // 直接跳转到主域名，这是最可靠的方案
+        const mainPageUrl = 'https://aocpal.7752099.xyz';
         console.log('目标URL:', mainPageUrl);
-        window.location.href = mainPageUrl;
+        
+        try {
+          console.log('跳转到主页面:', mainPageUrl);
+          window.location.href = mainPageUrl;
+        } catch (jumpErr) {
+          console.error('跳转失败:', jumpErr);
+          // 备用方案：尝试相对路径
+          window.location.href = './index.html';
+        }
       }
     } catch (err) {
       console.error('返回按钮错误:', err);
-      // 备用方案
-      try {
-        window.history.back();
-      } catch (_) {
-        window.location.href = './index.html';
-      }
+      // 备用方案：直接跳转到主域名
+      window.location.href = 'https://aocpal.7752099.xyz';
     }
   });
   

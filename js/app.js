@@ -1166,17 +1166,38 @@
   })();
 
   // ---------- Actions ----------
-  function updateSelected(updater) {
+  function updateSelected(updater, delayStatusShow = false) { 
     const idx = state.pets.findIndex((p) => p.id === state.selectedPetId);
     if (idx === -1) return;
     const pet = state.pets[idx];
     const caughtUp = applyTimeDelta(pet, minutesBetween(nowMs(), pet.lastUpdated));
     const updated = updater(caughtUp);
     updated.lastUpdated = nowMs();
+    
+    // 计算状态变化
+    const changes = {
+      hunger: updated.hunger - caughtUp.hunger,
+      happiness: updated.happiness - caughtUp.happiness,
+      energy: updated.energy - caughtUp.energy,
+      cleanliness: updated.cleanliness - caughtUp.cleanliness,
+      xp: updated.xp - caughtUp.xp
+    };
+    
     state.pets[idx] = updated;
     saveState(state);
     // 仅更新数值，不重载媒体，避免闪烁
     updateStatsUI(updated);
+    
+    // 根据参数决定是否延迟显示状态变化文本
+    if (delayStatusShow) {
+      // 延迟2秒显示状态变化文本，确保互动结果已经显示完成
+      setTimeout(() => {
+        showStatusChangeText(changes);
+      }, 2000);
+    } else {
+      // 立即显示状态变化文本
+      showStatusChangeText(changes);
+    }
   }
 
   // 完成小游戏后给予奖励
@@ -1191,7 +1212,7 @@
         xp: clamp(pet.xp + xpBonus, 0, 999), // 新增：小游戏获得亲密值
       };
       return updated;
-    });
+    }, true); // 延迟显示状态变化
   }
 
   // 打开/收起小游戏面板（浮动到OC容器，顶部对齐容器中心线）+ 玩耍动画
@@ -1252,7 +1273,7 @@
   });
   sleepBtn.addEventListener('click', () => { 
     animatePet('sleep'); 
-    updateSelected(ACTIONS.sleep); 
+    updateSelected(ACTIONS.sleep, false); // 立即显示状态变化
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     const petName = pet?.name || 'OC';
     appendInteractionLog(`陪${petName}睡觉 🛌`); 
@@ -2856,10 +2877,12 @@
       const el = document.getElementById('pet-subtitle');
       if (!el) return;
       if (subtitleTimer) { clearInterval(subtitleTimer); subtitleTimer = null; }
-      let i = 0;
+      // 随机选择一个起始语录
+      let i = Math.floor(Math.random() * BABY_QUOTES.length);
       el.textContent = BABY_QUOTES[i] || '';
       subtitleTimer = setInterval(() => {
-        i = (i + 1) % BABY_QUOTES.length;
+        // 每次都是随机选择一个语录，而不是按顺序
+        i = Math.floor(Math.random() * BABY_QUOTES.length);
         el.textContent = BABY_QUOTES[i] || '';
       }, 4000);
     } catch (_) {}
@@ -2877,7 +2900,7 @@
     const petName = pet?.name || '小OC';
     const safeName = String(petName).replace(/[“”"'\u201C\u201D]/g, '');
 
-    // 将直白文案转为可爱语气，并带上名字
+    // 将直白文案转为可爱语气，不带上名字前缀
     let cute = message;
     if (message.includes('投喂')) {
       cute = `给${safeName}投喂，咔嚓咔嚓真香！🍖`;
@@ -2890,7 +2913,7 @@
     } else if (message.includes('光影')) {
       cute = `为${safeName}换上新光影，闪闪发光！🎨`;
     } else {
-      cute = `${safeName}：${message}`;
+      cute = message; // 直接使用原消息，不添加名字前缀
     }
 
     const line = document.createElement('div');
@@ -3069,13 +3092,37 @@
   openChatBtn && openChatBtn.addEventListener('click', () => {
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     const pid = pet?.id || '';
-    // 更稳健的URL构造：相对路径替换，兼容子目录与hash
-    const basePath = location.pathname.replace(/index\.html$/i, '').replace(/\/$/,'');
-    const chatPath = basePath + (basePath.endsWith('/') ? 'chat.html' : '/chat.html');
-    const url = new URL(chatPath, location.origin);
-    if (pid) url.searchParams.set('pet', pid);
+    
+    // 更稳健的URL构造：确保正确跳转到聊天页面
+    let chatUrl;
+    try {
+      const currentPath = location.pathname;
+      const basePath = currentPath.replace(/\/index\.html$/i, '').replace(/\/$/, '');
+      const chatPath = basePath + (basePath.endsWith('/') ? 'chat.html' : '/chat.html');
+      chatUrl = new URL(chatPath, location.origin);
+      
+      // 如果构造的URL看起来不对，使用备用方案
+      if (!chatUrl.pathname.includes('chat.html')) {
+        chatUrl = new URL('./chat.html', location.href);
+      }
+    } catch (err) {
+      console.error('聊天URL构造失败:', err);
+      chatUrl = new URL('./chat.html', location.href);
+    }
+    
+    if (pid) chatUrl.searchParams.set('pet', pid);
+    console.log('跳转到聊天页面:', chatUrl.toString());
+    
     // 同窗口跳转，保留历史记录，便于手机返回到主页面
-    location.href = url.toString();
+    try {
+      location.href = chatUrl.toString();
+    } catch (err) {
+      console.error('聊天页面跳转失败:', err);
+      // 备用方案：直接使用相对路径
+      const fallbackUrl = `./chat.html${pid ? `?pet=${pid}` : ''}`;
+      console.log('使用备用方案跳转:', fallbackUrl);
+      location.href = fallbackUrl;
+    }
   });
 
   // ---------- 投喂系统 ----------
@@ -3358,7 +3405,7 @@
     // 返回组合后的结果
     return {
       emoji: selectedResult.emoji,
-      name: baseDish.name + selectedResult.suffix,
+      name: baseDish.name, // 移除级别后缀，只显示菜名
       particles: finalParticles,
       message: selectedResult.message,
       grade: selectedResult.type,
@@ -3395,13 +3442,16 @@
         dishName.textContent = result.name;
         resultDiv.style.display = 'block';
         
-        // 显示烹饪等级
-        gradeEmoji.textContent = result.gradeEmoji;
-        gradeText.textContent = result.gradeText;
+        // 修改标题，将"烹饪结果"和级别放在同一行
+        const titleElement = resultDiv.querySelector('h4');
+        if (titleElement) {
+          titleElement.innerHTML = `烹饪结果： <span class="grade-emoji">${result.gradeEmoji}</span> <span class="grade-text">${result.gradeText}</span>`;
+        }
         
-        // 移除之前的等级样式
-        cookingGrade.className = 'cooking-grade';
-        cookingGrade.classList.add(result.grade);
+        // 隐藏原来的等级显示区域
+        if (cookingGrade) {
+          cookingGrade.style.display = 'none';
+        }
         
         // 添加烹饪结果消息显示
         const resultMessage = document.createElement('div');
@@ -3420,7 +3470,7 @@
       
       // 执行投喂动作
       animatePet('feed');
-      updateSelected(ACTIONS.feed);
+      updateSelected(ACTIONS.feed, true); // 延迟显示状态变化
       const pet = state.pets.find((p) => p.id === state.selectedPetId);
       const petName = pet?.name || 'OC';
       
@@ -3479,7 +3529,7 @@
           
           // 执行投喂动作
           animatePet('feed');
-          updateSelected(ACTIONS.feed);
+          updateSelected(ACTIONS.feed, true); // 延迟显示状态变化
                   const pet = state.pets.find((p) => p.id === state.selectedPetId);
         const petName = pet?.name || 'OC';
         
@@ -3537,6 +3587,81 @@
         }
       }, delay + duration + 1000);
     }
+  }
+
+  // 显示状态值变化文本
+  function showStatusChangeText(changes) {
+    const petEffects = document.getElementById('pet-effects');
+    if (!petEffects) {
+      console.error('未找到 pet-effects 元素');
+      return;
+    }
+    
+    // 创建状态变化文本元素
+    const statusText = document.createElement('div');
+    statusText.className = 'status-change-text';
+    
+    // 构建变化文本
+    const changeTexts = [];
+    if (changes.hunger !== undefined && changes.hunger !== 0) {
+      const sign = changes.hunger > 0 ? '+' : '';
+      changeTexts.push(`饥饿度${sign}${changes.hunger}`);
+    }
+    if (changes.happiness !== undefined && changes.happiness !== 0) {
+      const sign = changes.happiness > 0 ? '+' : '';
+      changeTexts.push(`快乐度${sign}${changes.happiness}`);
+    }
+    if (changes.energy !== undefined && changes.energy !== 0) {
+      const sign = changes.energy > 0 ? '+' : '';
+      changeTexts.push(`精力${sign}${changes.energy}`);
+    }
+    if (changes.cleanliness !== undefined && changes.cleanliness !== 0) {
+      const sign = changes.cleanliness > 0 ? '+' : '';
+      changeTexts.push(`清洁度${sign}${changes.cleanliness}`);
+    }
+    if (changes.xp !== undefined && changes.xp !== 0) {
+      const sign = changes.xp > 0 ? '+' : '';
+      changeTexts.push(`亲密值${sign}${changes.xp}`);
+    }
+    
+    // 如果没有变化，不显示
+    if (changeTexts.length === 0) {
+      console.log('没有状态变化，不显示文本');
+      return;
+    }
+    
+    statusText.textContent = changeTexts.join(' ');
+    console.log('显示状态变化文本:', statusText.textContent);
+    
+    // 设置样式
+    statusText.style.cssText = `
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 134, 178, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1001;
+      opacity: 0;
+      animation: statusChangeFloat 3s ease-out forwards;
+    `;
+    
+    petEffects.appendChild(statusText);
+    console.log('状态变化文本已添加到DOM');
+    
+    // 3秒后自动移除
+    setTimeout(() => {
+      if (statusText.parentNode) {
+        statusText.parentNode.removeChild(statusText);
+        console.log('状态变化文本已移除');
+      }
+    }, 3000);
   }
 
   // 保存互动记录到内存
@@ -3796,7 +3921,7 @@
         type: 'terrible',
         emoji: '😰',
         title: '糟糕沐浴',
-        message: '沐浴效果很差，OC感觉不舒服，甚至有点后悔...',
+        message: '沐浴效果很差，TA感觉不舒服，甚至有点后悔...',
         particles: ['😰', '💦', '💨', '💧'],
         cleanlinessBonus: 0.5,
         happinessBonus: 0.5,
@@ -3864,13 +3989,16 @@
         effectName.textContent = result.name;
         resultDiv.style.display = 'block';
         
-        // 显示沐浴等级
-        gradeEmoji.textContent = result.gradeEmoji;
-        gradeText.textContent = result.gradeTitle;
+        // 修改标题，将"沐浴结果"和级别放在同一行
+        const titleElement = resultDiv.querySelector('h4');
+        if (titleElement) {
+          titleElement.innerHTML = `沐浴结果： <span class="grade-emoji">${result.gradeEmoji}</span> <span class="grade-text">${result.gradeTitle}</span>`;
+        }
         
-        // 移除之前的等级样式
-        bathingGrade.className = 'bathing-grade';
-        bathingGrade.classList.add(result.grade);
+        // 隐藏原来的等级显示区域
+        if (bathingGrade) {
+          bathingGrade.style.display = 'none';
+        }
         
         // 添加沐浴结果消息显示
         const resultMessage = document.createElement('div');
@@ -3897,7 +4025,7 @@
         happiness: clamp(pet.happiness + result.happiness, 0, 100),
         energy: clamp(pet.energy + result.energy, 0, 100),
         xp: clamp(pet.xp + 4, 0, 999) // 沐浴获得4亲密值
-      }));
+      }), true); // 延迟显示状态变化
       
       const pet = state.pets.find((p) => p.id === state.selectedPetId);
       const petName = pet?.name || 'OC';
@@ -3909,6 +4037,50 @@
       showBathingParticles(result.particles);
     }, 4000);
   });
+
+  // 显示沐浴粒子效果
+  function showBathingParticles(particles) {
+    const petEffects = document.getElementById('pet-effects');
+    if (!petEffects) return;
+    
+    // 清除之前的粒子
+    petEffects.innerHTML = '';
+    
+    // 创建多个粒子
+    for (let i = 0; i < 12; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'bathing-particle';
+      particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+      
+      // 随机位置和动画
+      const startX = Math.random() * 100;
+      const startY = Math.random() * 100;
+      const endX = startX + (Math.random() - 0.5) * 50;
+      const endY = startY - Math.random() * 30 - 15;
+      const delay = Math.random() * 800;
+      const duration = 1800 + Math.random() * 800;
+      
+      particle.style.cssText = `
+        position: absolute;
+        left: ${startX}%;
+        top: ${startY}%;
+        font-size: ${14 + Math.random() * 10}px;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1000;
+        animation: bathingParticleFloat ${duration}ms ease-out ${delay}ms forwards;
+      `;
+      
+      petEffects.appendChild(particle);
+      
+      // 自动移除粒子
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, delay + duration + 800);
+    }
+  }
 
   // 沐浴弹窗返回按钮
   document.getElementById('bathing-back')?.addEventListener('click', () => {

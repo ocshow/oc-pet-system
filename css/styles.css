@@ -3030,3 +3030,128 @@ datalist option:not(:last-child) {
   background-color: transparent !important;
   object-fit: contain;
 }
+
+/* 烹饪结果标题中的级别样式 */
+.cooking-result h4 {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.cooking-result h4 .grade-emoji {
+  font-size: 20px;
+  vertical-align: middle;
+}
+
+.cooking-result h4 .grade-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  vertical-align: middle;
+  padding: 2px 8px;
+  background: rgba(255, 134, 178, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 134, 178, 0.2);
+}
+
+/* 沐浴结果标题中的级别样式 */
+.bathing-result h4 {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.bathing-result h4 .grade-emoji {
+  font-size: 20px;
+  vertical-align: middle;
+}
+
+.bathing-result h4 .grade-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  vertical-align: middle;
+  padding: 2px 8px;
+  background: rgba(100, 149, 237, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(100, 149, 237, 0.2);
+}
+
+/* 状态变化文本动画 */
+@keyframes statusChangeFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* 状态变化文本样式 */
+.status-change-text {
+  box-shadow: 0 4px 12px rgba(255, 134, 178, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+/* 沐浴粒子动画 */
+@keyframes bathingParticleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  80% {
+    opacity: 0.8;
+    transform: translateY(-30px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.8);
+  }
+}
+
+/* 食物粒子动画 */
+@keyframes foodParticleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1);
+  }
+  80% {
+    opacity: 0.8;
+    transform: translateY(-40px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+/* pet-effects 容器样式 */
+.pet-effects {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
