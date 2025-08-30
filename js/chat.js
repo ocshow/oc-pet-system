@@ -283,6 +283,8 @@
         
         try {
           console.log('跳转到主页面:', mainPageUrl);
+          // 在跳转前设置一个标记，表示是从聊天页面返回的
+          sessionStorage.setItem('from-chat-page', 'true');
           window.location.href = mainPageUrl;
         } catch (jumpErr) {
           console.error('跳转失败:', jumpErr);

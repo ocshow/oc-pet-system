@@ -341,6 +341,48 @@ body {
 .pet-meta-main { display: flex; align-items: center; gap: 10px; }
 .pet-meta-sub { display: flex; align-items: center; gap: 8px; }
 
+.companion-days {
+  background: linear-gradient(135deg, #ffe6f0, #fff0f5);
+  color: #481748;
+  padding: 4px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.2);
+  margin: 0 0 0 0;
+  display: block;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  transition: all 0.3s ease;
+}
+
+.companion-days:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(255, 182, 193, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+
+
+.companion-days .days-number {
+  color: #ff6b9d;
+  font-weight: 700;
+  font-size: 15px;
+  text-shadow: 0 0 8px rgba(255, 107, 157, 0.4);
+  animation: numberGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes numberGlow {
+  0% {
+    text-shadow: 0 0 8px rgba(255, 107, 157, 0.4);
+  }
+  100% {
+    text-shadow: 0 0 12px rgba(255, 107, 157, 0.6), 0 0 20px rgba(255, 107, 157, 0.3);
+  }
+}
+
 /* 让顶部容器与下方容器同宽、自适应 */
 .pet-overview { width: 100%; }
 .pet-info-left { width: 100%; }
@@ -3154,4 +3196,81 @@ datalist option:not(:last-child) {
   height: 100%;
   pointer-events: none;
   z-index: 1000;
+}
+
+/* 睡觉模式 - 页面暗色效果 */
+body.sleep-mode {
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460) !important;
+  transition: all 1s ease-in-out;
+}
+
+body.sleep-mode * {
+  transition: all 1s ease-in-out;
+}
+
+/* 睡觉模式下的主要元素暗色效果 */
+body.sleep-mode .pet-stage {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(22, 33, 62, 0.8)) !important;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+body.sleep-mode .pet-detail {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9)) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.sleep-mode .pet-list {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(22, 33, 62, 0.8)) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.sleep-mode .btn {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)) !important;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.sleep-mode .btn:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1)) !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+body.sleep-mode .stat-bar {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.sleep-mode .stat-bar-fill {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+body.sleep-mode .interaction-log {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.7), rgba(22, 33, 62, 0.7)) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.sleep-mode .footer {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(22, 33, 62, 0.8)) !important;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 睡觉模式下的文字颜色调整 */
+body.sleep-mode h1, 
+body.sleep-mode h2, 
+body.sleep-mode h3, 
+body.sleep-mode h4, 
+body.sleep-mode h5, 
+body.sleep-mode h6 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body.sleep-mode .pet-item-name,
+body.sleep-mode .pet-species,
+body.sleep-mode .pet-level {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 睡觉模式下的进度条文字 */
+body.sleep-mode .stat-text {
+  color: rgba(255, 255, 255, 0.9) !important;
 }

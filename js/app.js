@@ -476,10 +476,15 @@
       }
       
       const migratedPets = data.pets.map((p) => {
+        let migratedPet = p;
         if (typeof p.id === 'string' && /^pet-/.test(p.id)) {
-          return { ...p, id: `pal-${p.id.slice(4)}` };
+          migratedPet = { ...p, id: `pal-${p.id.slice(4)}` };
         }
-        return p;
+        // 为旧数据添加createdAt字段，如果没有的话使用lastUpdated作为创建时间
+        if (!migratedPet.createdAt) {
+          migratedPet.createdAt = migratedPet.lastUpdated || nowMs();
+        }
+        return migratedPet;
       });
       
       let migratedSelected = data.selectedPetId ?? null;
@@ -516,6 +521,7 @@
       cleanliness: 80,
       xp: 0, // 新增：亲密值
       stage: '',
+      createdAt: timestamp, // 新增：创建时间
       lastUpdated: timestamp
     };
   }
@@ -533,7 +539,7 @@
       energy: clamp(pet.energy + energyDelta, 0, 100),
       cleanliness: clamp(pet.cleanliness + cleanlinessDelta, 0, 100),
       happiness: clamp(pet.happiness + happinessDelta, 0, 100),
-      xp: clamp(pet.xp + xpDelta, 0, 999), // 新增：亲密值变化，最高999
+              xp: clamp(pet.xp + xpDelta, 0, 1000), // 新增：亲密值变化，最高1000
       lastUpdated: pet.lastUpdated + minutes * 60000
     };
   }
@@ -544,7 +550,7 @@
         ...pet,
         hunger: clamp(pet.hunger - 20, 0, 100),
         happiness: clamp(pet.happiness + 5, 0, 100),
-        xp: clamp(pet.xp + 3, 0, 999) // 新增：投喂获得3亲密值
+        xp: clamp(pet.xp + 3, 0, 1000) // 新增：投喂获得3亲密值
       };
     },
     play(pet) {
@@ -553,7 +559,7 @@
         happiness: clamp(pet.happiness + 15, 0, 100),
         energy: clamp(pet.energy - 15, 0, 100),
         cleanliness: clamp(pet.cleanliness - 10, 0, 100),
-        xp: clamp(pet.xp + 5, 0, 999) // 新增：玩耍获得5亲密值
+        xp: clamp(pet.xp + 5, 0, 1000) // 新增：玩耍获得5亲密值
       };
     },
     sleep(pet) {
@@ -561,14 +567,14 @@
         ...pet,
         energy: clamp(pet.energy + 25, 0, 100),
         hunger: clamp(pet.hunger + 10, 0, 100),
-        xp: clamp(pet.xp + 2, 0, 999) // 新增：睡觉获得2亲密值
+        xp: clamp(pet.xp + 2, 0, 1000) // 新增：睡觉获得2亲密值
       };
     },
     clean(pet) {
       return {
         ...pet,
         cleanliness: clamp(pet.cleanliness + 40, 0, 100),
-        xp: clamp(pet.xp + 4, 0, 999) // 新增：清洁获得4亲密值
+        xp: clamp(pet.xp + 4, 0, 1000) // 新增：清洁获得4亲密值
       };
     }
   };
@@ -677,7 +683,7 @@
         happiness: clamp(typeof src.happiness === 'number' ? src.happiness : 70, 0, 100),
         energy: clamp(typeof src.energy === 'number' ? src.energy : 70, 0, 100),
         cleanliness: clamp(typeof src.cleanliness === 'number' ? src.cleanliness : 80, 0, 100),
-        xp: clamp(typeof src.xp === 'number' ? src.xp : 0, 0, 999), // 新增：亲密值
+        xp: clamp(typeof src.xp === 'number' ? src.xp : 0, 0, 1000), // 新增：亲密值
         stage: typeof src.stage === 'string' ? src.stage : '',
         lastUpdated: typeof src.lastUpdated === 'number' ? src.lastUpdated : nowMs(),
         // 保留自定义媒体（允许预设OC覆盖显示上传媒体）
@@ -857,6 +863,22 @@
     return `${y}-${m}-${day} ${hh}:${mm}`;
   }
 
+  // 计算并更新陪伴天数
+  function updateCompanionDays(pet) {
+    const companionDaysEl = document.getElementById('companion-days');
+    if (!companionDaysEl) return;
+    
+    // 计算从创建时间到现在的天数
+    const now = new Date();
+    const createdDate = new Date(pet.createdAt || pet.lastUpdated); // 优先使用createdAt，兼容旧数据
+    const timeDiff = now.getTime() - createdDate.getTime();
+    const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+    
+    // 显示陪伴天数，最少显示第1天
+    const displayDays = Math.max(1, daysDiff + 1);
+    companionDaysEl.innerHTML = `和TA一起相伴的第<span class="days-number">${displayDays}</span>天`;
+  }
+
   function updateStatsUI(pet) {
     const hungerPercent = pet.hunger;
     const happinessPercent = pet.happiness;
@@ -887,6 +909,9 @@
 
     // 更新时间
     lastUpdatedEl.textContent = `${formatTime(pet.lastUpdated)}`;
+    
+    // 更新陪伴天数
+    updateCompanionDays(pet);
   }
 
   function renderPetDetail(pet) {
@@ -1042,7 +1067,7 @@
       updateSelected((pet) => ({
         ...pet,
         happiness: clamp(pet.happiness + 2, 0, 100),
-        xp: clamp(pet.xp + 1, 0, 999)
+        xp: clamp(pet.xp + 1, 0, 1000)
       }));
     }
 
@@ -1174,13 +1199,13 @@
     const updated = updater(caughtUp);
     updated.lastUpdated = nowMs();
     
-    // 计算状态变化
+    // 计算状态变化，并控制精度避免超长小数
     const changes = {
-      hunger: updated.hunger - caughtUp.hunger,
-      happiness: updated.happiness - caughtUp.happiness,
-      energy: updated.energy - caughtUp.energy,
-      cleanliness: updated.cleanliness - caughtUp.cleanliness,
-      xp: updated.xp - caughtUp.xp
+      hunger: Math.round((updated.hunger - caughtUp.hunger) * 100) / 100,
+      happiness: Math.round((updated.happiness - caughtUp.happiness) * 100) / 100,
+      energy: Math.round((updated.energy - caughtUp.energy) * 100) / 100,
+      cleanliness: Math.round((updated.cleanliness - caughtUp.cleanliness) * 100) / 100,
+      xp: Math.round((updated.xp - caughtUp.xp) * 100) / 100
     };
     
     state.pets[idx] = updated;
@@ -1209,7 +1234,7 @@
         ...pet,
         happiness: clamp(pet.happiness + happinessBonus, 0, 100),
         energy: clamp(pet.energy - 5, 0, 100),
-        xp: clamp(pet.xp + xpBonus, 0, 999), // 新增：小游戏获得亲密值
+        xp: clamp(pet.xp + xpBonus, 0, 1000), // 新增：小游戏获得亲密值
       };
       return updated;
     }, true); // 延迟显示状态变化
@@ -1271,12 +1296,61 @@
       panel.removeAttribute('style');
     }
   });
-  sleepBtn.addEventListener('click', () => { 
-    animatePet('sleep'); 
-    updateSelected(ACTIONS.sleep, false); // 立即显示状态变化
-    const pet = state.pets.find((p) => p.id === state.selectedPetId);
-    const petName = pet?.name || 'OC';
-    appendInteractionLog(`陪${petName}睡觉 🛌`); 
+  // 睡觉按钮点击事件处理函数
+  function handleSleepButtonClick() {
+    console.log('睡觉按钮被点击');
+    const body = document.body;
+    const isSleepMode = body.classList.contains('sleep-mode');
+    
+    if (!isSleepMode) {
+      // 进入睡觉模式
+      console.log('进入睡觉模式');
+      animatePet('sleep'); 
+      updateSelected(ACTIONS.sleep, false); // 立即显示状态变化
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      appendInteractionLog(`陪${petName}睡觉 🛌`); 
+      
+      // 添加页面暗色模式效果
+      body.classList.add('sleep-mode');
+      
+      // 更改按钮文字为"起床"
+      const sleepBtnText = sleepBtn.querySelector('.action-text');
+      if (sleepBtnText) {
+        sleepBtnText.textContent = '起床';
+        console.log('按钮文字已更改为: 起床');
+      }
+    } else {
+      // 退出睡觉模式
+      console.log('退出睡觉模式');
+      const pet = state.pets.find((p) => p.id === state.selectedPetId);
+      const petName = pet?.name || 'OC';
+      appendInteractionLog(`${petName}起床了 ☀️`); 
+      
+      // 移除页面暗色模式效果
+      body.classList.remove('sleep-mode');
+      
+      // 恢复按钮文字为"睡觉"
+      const sleepBtnText = sleepBtn.querySelector('.action-text');
+      if (sleepBtnText) {
+        sleepBtnText.textContent = '睡觉';
+        console.log('按钮文字已更改为: 睡觉');
+      }
+    }
+  }
+
+  // 为睡觉按钮添加多种事件监听器，确保在手机端也能正常工作
+  sleepBtn.addEventListener('click', handleSleepButtonClick);
+  sleepBtn.addEventListener('touchstart', (e) => {
+    console.log('睡觉按钮触摸事件触发');
+    e.preventDefault(); // 防止默认行为
+    e.stopPropagation(); // 阻止事件冒泡
+    handleSleepButtonClick();
+  });
+  
+  // 确保按钮在手机端也能正常响应
+  sleepBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
   });
   
   // 沐浴按钮点击事件 - 打开沐浴选择弹窗
@@ -1309,7 +1383,7 @@
   ['click','mousedown','mouseup','pointerdown','touchstart'].forEach((evt) => {
     feedBtn && feedBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
     playBtn && playBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
-    sleepBtn && sleepBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
+    // 注意：sleepBtn的事件监听器已经在上面单独处理，这里不再添加
     cleanBtn && cleanBtn.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
     actionsPanel && actionsPanel.addEventListener(evt, stopStageEffects, { passive: evt === 'touchstart' ? false : true });
   });
@@ -2919,8 +2993,8 @@
     const line = document.createElement('div');
     line.textContent = `[${time}] ${cute}`;
     el.appendChild(line);
-    // 保持最多 10 条，超出移除最旧
-    while (el.childNodes.length > 10) el.removeChild(el.firstChild);
+    // 保持最多 5 条，超出移除最旧
+    while (el.childNodes.length > 5) el.removeChild(el.firstChild);
   }
 
   // ---------- OC 聊天 ----------
@@ -3098,7 +3172,7 @@
     try {
       const currentPath = location.pathname;
       const basePath = currentPath.replace(/\/index\.html$/i, '').replace(/\/$/, '');
-      const chatPath = basePath + (basePath.endsWith('/') ? 'chat.html' : '/chat.html');
+    const chatPath = basePath + (basePath.endsWith('/') ? 'chat.html' : '/chat.html');
       chatUrl = new URL(chatPath, location.origin);
       
       // 如果构造的URL看起来不对，使用备用方案
@@ -3601,27 +3675,32 @@
     const statusText = document.createElement('div');
     statusText.className = 'status-change-text';
     
-    // 构建变化文本
+    // 构建变化文本，确保数值精度
     const changeTexts = [];
     if (changes.hunger !== undefined && changes.hunger !== 0) {
       const sign = changes.hunger > 0 ? '+' : '';
-      changeTexts.push(`饥饿度${sign}${changes.hunger}`);
+      const hungerValue = Math.abs(changes.hunger) < 0.01 ? Math.round(changes.hunger) : Math.round(changes.hunger * 10) / 10;
+      changeTexts.push(`饥饿度${sign}${hungerValue}`);
     }
     if (changes.happiness !== undefined && changes.happiness !== 0) {
       const sign = changes.happiness > 0 ? '+' : '';
-      changeTexts.push(`快乐度${sign}${changes.happiness}`);
+      const happinessValue = Math.abs(changes.happiness) < 0.01 ? Math.round(changes.happiness) : Math.round(changes.happiness * 10) / 10;
+      changeTexts.push(`快乐度${sign}${happinessValue}`);
     }
     if (changes.energy !== undefined && changes.energy !== 0) {
       const sign = changes.energy > 0 ? '+' : '';
-      changeTexts.push(`精力${sign}${changes.energy}`);
+      const energyValue = Math.abs(changes.energy) < 0.01 ? Math.round(changes.energy) : Math.round(changes.energy * 10) / 10;
+      changeTexts.push(`精力${sign}${energyValue}`);
     }
     if (changes.cleanliness !== undefined && changes.cleanliness !== 0) {
       const sign = changes.cleanliness > 0 ? '+' : '';
-      changeTexts.push(`清洁度${sign}${changes.cleanliness}`);
+      const cleanlinessValue = Math.abs(changes.cleanliness) < 0.01 ? Math.round(changes.cleanliness) : Math.round(changes.cleanliness * 10) / 10;
+      changeTexts.push(`清洁度${sign}${cleanlinessValue}`);
     }
     if (changes.xp !== undefined && changes.xp !== 0) {
       const sign = changes.xp > 0 ? '+' : '';
-      changeTexts.push(`亲密值${sign}${changes.xp}`);
+      const xpValue = Math.abs(changes.xp) < 0.01 ? Math.round(changes.xp) : Math.round(changes.xp * 10) / 10;
+      changeTexts.push(`亲密值${sign}${xpValue}`);
     }
     
     // 如果没有变化，不显示
@@ -4024,7 +4103,7 @@
         cleanliness: clamp(pet.cleanliness + result.cleanliness, 0, 100),
         happiness: clamp(pet.happiness + result.happiness, 0, 100),
         energy: clamp(pet.energy + result.energy, 0, 100),
-        xp: clamp(pet.xp + 4, 0, 999) // 沐浴获得4亲密值
+        xp: clamp(pet.xp + 4, 0, 1000) // 沐浴获得4亲密值
       }), true); // 延迟显示状态变化
       
       const pet = state.pets.find((p) => p.id === state.selectedPetId);
