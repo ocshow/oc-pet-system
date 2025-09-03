@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oc-pet-cache-v2';
+const CACHE_NAME = 'oc-pet-cache-v3';
 // 使用相对 scope 的 URL，避免在子路径或自定义域名下 404
 const ASSETS = [
   './',

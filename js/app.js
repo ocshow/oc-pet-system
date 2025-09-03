@@ -1,6 +1,5 @@
 (() => {
   'use strict';
-
   // ---------- Utilities ----------
   // PWA: 注册 Service Worker
   try {
@@ -1529,52 +1528,52 @@
           if (file.type === 'image/gif') {
             const mediaId = `media-${uid()}`;
             await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
+      newPet.customMedia = {
+        type: file.type,
+        name: file.name,
+            size: file.size,
+            mediaId
+          };
+        } else if (file.type.startsWith('image/')) {
+          const dataUrl = await compressImage(file, 1024, 0.8);
+          pet.customMedia = {
+            type: /png$/i.test(file.type) ? 'image/png' : 'image/jpeg',
+            name: file.name,
+            size: dataUrl.length,
+            dataUrl
+          };
+        } else if (file.type.startsWith('video/')) {
+          const mediaId = `media-${uid()}`;
+          await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
           pet.customMedia = {
             type: file.type,
             name: file.name,
             size: file.size,
-              mediaId
-            };
-          } else if (file.type.startsWith('image/')) {
-            const dataUrl = await compressImage(file, 1024, 0.8);
-            pet.customMedia = {
-              type: /png$/i.test(file.type) ? 'image/png' : 'image/jpeg',
-              name: file.name,
-              size: dataUrl.length,
-              dataUrl
-            };
-          } else if (file.type.startsWith('video/')) {
-            const mediaId = `media-${uid()}`;
-            await idbSaveMedia(mediaId, file, { type: file.type, name: file.name, size: file.size });
-            pet.customMedia = {
-              type: file.type,
-              name: file.name,
-              size: file.size,
-              mediaId
-            };
-          } else {
-            alert('仅支持图片或视频文件');
-            return;
-          }
-          pet.lastUpdated = nowMs();
-          saveState(state);
-          render();
-          updateCreatePetButtonVisibility();
-          // 保存新媒体后自动刷新页面，确保媒体资源（含IndexedDB）重新挂载
-          setTimeout(() => { location.reload(); }, 50);
-          onCancel();
-        } catch (err) {
-          console.error('媒体保存失败:', err);
-          alert('媒体保存失败，请重试或更换文件');
+            mediaId
+          };
+        } else {
+          alert('仅支持图片或视频文件');
+          return;
         }
-        return; // 已处理
+        pet.lastUpdated = nowMs();
+        saveState(state);
+        render();
+        updateCreatePetButtonVisibility();
+        // 保存新媒体后自动刷新页面，确保媒体资源（含IndexedDB）重新挂载
+        setTimeout(() => { location.reload(); }, 50);
+        onCancel();
+      } catch (err) {
+        console.error('媒体保存失败:', err);
+        alert('媒体保存失败，请重试或更换文件');
       }
+      return; // 已处理
+    }
       
-      pet.lastUpdated = nowMs();
-      saveState(state);
-      render();
-      onCancel();
-    };
+    pet.lastUpdated = nowMs();
+    saveState(state);
+    render();
+    onCancel();
+  };
 
     saveBtn.addEventListener('click', onSave);
     cancelBtn.addEventListener('click', onCancel);
@@ -2076,13 +2075,13 @@
     { q: '什么东西你能把它装满，但里面依然是空的？', a: '鞋子', h: '放入的是脚' },
     { q: '什么东西你用得越多，你留下的就越多？', a: '脚印', h: '走得越多越明显' },
     { q: '什么东西有脸但没有头，有手却没有胳膊？', a: '时钟', h: '钟面与指针' },
-    { q: '什么东西你不按它，它就无法“回答”？', a: '门铃/电话', h: '先触发再响' },
+    { q: '什么东西你不按它，它就无法"回答"？', a: '门铃/电话', h: '先触发再响' },
     { q: '什么东西能穿越玻璃而自身不会破碎？', a: '光', h: '透过而非撞碎' },
     { q: '什么东西你只能在水的中途找到？', a: '字母T', h: '英文water中间' },
     { q: '什么东西越是拿走，它就变得越大？', a: '洞/坑', h: '越挖越大' },
     { q: '什么东西永远在回答，却从不提问？', a: '回声', h: '重复你的声音' },
     { q: '什么东西有四条腿，却只有一只脚和一个头？', a: '床', h: '床腿床头床脚' },
-    { q: '什么东西你只能在水面下“握住”？', a: '呼吸', h: '屏住它' },
+    { q: '什么东西你只能在水面下"握住"？', a: '呼吸', h: '屏住它' },
     { q: '什么东西完全属于你，却比别人用得都多？', a: '你的名字', h: '别人称呼更频繁' },
     { q: '什么东西你可以给它写信，但它永远无法读？', a: '漂流瓶/瓶子', h: '容器不是读者' },
     { q: '什么东西总是在奔跑，却从未离开过它的角落？', a: '邮票', h: '贴在信封角落' },
@@ -2093,7 +2092,7 @@
     { q: '什么东西有头有尾，但没有身体？', a: '硬币', h: '正反面' },
     { q: '什么东西你越是隐藏，它就越是显现？', a: '年龄/错误', h: '掩饰反而暴露' },
     { q: '什么东西能穿越时空，却始终停留在原地？', a: '地平线', h: '永远在前方' },
-    { q: '什么东西没有生命，却需要被“喂食”才能工作？', a: '火', h: '燃料' },
+    { q: '什么东西没有生命，却需要被"喂食"才能工作？', a: '火', h: '燃料' },
     { q: '什么东西你只有在说出它的名字时才会打破它？', a: '沉默', h: '开口即破' },
     { q: '什么东西能让你自由，但也能将你囚禁？', a: '习惯/思想', h: '双刃剑' },
     { q: '什么东西你给予越多，你拥有的也越多？', a: '爱/知识', h: '分享不减' },
@@ -2115,8 +2114,6 @@
     { q: '什么东西越用越多？', a: '知识', h: '学无止境' },
   ];
 
-  // 保证题库数量至少 50 条（不够则循环扩充）
-  // 注意：必须在 RIDDLES/JOKES/SOUPS 全部定义之后再调用
   let riddleIndex = 0;
   function initRiddle() {
     riddleIndex = Math.floor(Math.random() * RIDDLES.length);
@@ -2230,35 +2227,35 @@
     j && (j.textContent = JOKES[jokeIndex]);
   });
 
-  // 海龟汤（故事+提示+答案）- 加强趣味与推理深度
+  // 海龟汤（故事+提示+答案）
   const SOUPS = [
-    { s: '深夜，男人在家听到“滴”的一声后立刻出门，几分钟后回家松了口气。第二天新闻说一条生命被拯救。发生了什么？', h: '那声“滴”不是家电报警', a: '他是灯塔守护者/航标维护员，“滴”是航标信标熄灭前的故障提示，他立即外出重启，使夜航船只避免搁浅。' },
-    { s: '一位钢琴家在演出中突然停下弹奏，观众却爆发出掌声。他什么也没说，也没继续弹。为什么？', h: '与曲目本身有关', a: '他演奏的是约翰·凯奇《4分33秒》，该曲以“静默”为核心，停下即是完成，观众为作品理念鼓掌。' },
+    { s: '深夜，男人在家听到"滴"的一声后立刻出门，几分钟后回家松了口气。第二天新闻说一条生命被拯救。发生了什么？', h: '那声"滴"不是家电报警', a: '他是灯塔守护者/航标维护员，"滴"是航标信标熄灭前的故障提示，他立即外出重启，使夜航船只避免搁浅。' },
+    { s: '一位钢琴家在演出中突然停下弹奏，观众却爆发出掌声。他什么也没说，也没继续弹。为什么？', h: '与曲目本身有关', a: '他演奏的是约翰·凯奇《4分33秒》，该曲以"静默"为核心，停下即是完成，观众为作品理念鼓掌。' },
     { s: '登山队在营地发现同伴的帐篷从内侧被划开，但四周没有任何脚印。同伴最终平安无事。为什么？', h: '极端环境常识', a: '暴风雪中帐篷被雪压住，同伴从内侧割开逃生；风雪抹平了脚印，后来他绕路回到营地。' },
     { s: '考古学家在沙漠中发现一具保存完好的骸骨，旁边只有一个小瓶塞。专家确认瓶子救了他。为什么仍然死亡？', h: '瓶塞曾属于更大的装置', a: '气密瓶塞用于水囊/氧囊，帮助他延缓死亡；但补给终究耗尽，他以更体面的方式离世。' },
-    { s: '作家在书未出版前就公开了“最后一章”，却没有剧透。读者仍热烈讨论。为什么？', h: '“最后一章”的含义变了', a: '他公开的是附录/注释式“终章”，是创作方法、引用与致谢，不包含剧情。' },
-    { s: '登山者在山顶丢失手套，只剩一只，却让另一队人获救。怎么回事？', h: '“丢”是刻意的', a: '他把一只丢下山脊作信号标记/挡风物，另一队据此判断风向与安全通道。' },
-    { s: '古董商买下一只“破表”，却说它每天都准确两次，但真正有价值的不是这个。那是什么？', h: '观察表壳以外', a: '真正有价值的是表带/铭刻/来源证明（Provenance），两次准点只是笑谈。' },
-    { s: '一个人走进酒吧，点了一杯水。酒保拿出一把枪，那个人说“谢谢”然后离开。为什么？', h: '与止嗝有关', a: '他在打嗝，酒保用枪吓他一跳止住打嗝。' },
-    { s: '一个人死在沙漠中，身边有一个包。为什么？', h: '“包”是什么', a: '他是跳伞员，降落伞包未打开而坠亡。' },
+    { s: '作家在书未出版前就公开了"最后一章"，却没有剧透。读者仍热烈讨论。为什么？', h: '"最后一章"的含义变了', a: '他公开的是附录/注释式"终章"，是创作方法、引用与致谢，不包含剧情。' },
+    { s: '登山者在山顶丢失手套，只剩一只，却让另一队人获救。怎么回事？', h: '"丢"是刻意的', a: '他把一只丢下山脊作信号标记/挡风物，另一队据此判断风向与安全通道。' },
+    { s: '古董商买下一只"破表"，却说它每天都准确两次，但真正有价值的不是这个。那是什么？', h: '观察表壳以外', a: '真正有价值的是表带/铭刻/来源证明（Provenance），两次准点只是笑谈。' },
+    { s: '一个人走进酒吧，点了一杯水。酒保拿出一把枪，那个人说"谢谢"然后离开。为什么？', h: '与止嗝有关', a: '他在打嗝，酒保用枪吓他一跳止住打嗝。' },
+    { s: '一个人死在沙漠中，身边有一个包。为什么？', h: '"包"是什么', a: '他是跳伞员，降落伞包未打开而坠亡。' },
     { s: '一个男人躺在房间里死了，身边有一个破碎的杯子和一滩水，门窗都从内侧锁着。他怎么死的？', h: '杯子不一定是玻璃', a: '他是冰雕/冰制装饰，升温融化成水与碎块。' },
-    { s: '男孩和父亲出车祸，父亲去世，男孩送医。医生看到男孩说：“我不能做手术，他是我儿子。”为什么？', h: '打破刻板印象', a: '医生是男孩的母亲。' },
+    { s: '男孩和父亲出车祸，父亲去世，男孩送医。医生看到男孩说："我不能做手术，他是我儿子。"为什么？', h: '打破刻板印象', a: '医生是男孩的母亲。' },
     { s: '一个人住在10楼，早上坐电梯到1楼；晚上回家只坐到7楼，再走楼梯到10楼。为什么？', h: '与身高有关', a: '他个子矮，只够到7楼按钮，独自时会跳着按更高层。' },
     { s: '午夜，一个人接到电话，什么也没说就挂断继续睡。次日镇上曝出谋杀案，他不害怕也不惊讶。为什么？', h: '与职业相关', a: '他是停尸房守夜人或相关从业者，听到的信息不影响他的风险感知。' },
     { s: '一个哑巴进店要买剪刀，如何表达？', h: '直接手势', a: '比出剪刀开合的手势即可。' },
-    { s: '女子独自在家，听到闯入声后在水槽看到一个盘子，就报警了。为什么？', h: '盘子状态是“机关”', a: '她离家前布置了干净/特定位置的盘子，状态改变证明有人来过。' },
+    { s: '女子独自在家，听到闯入声后在水槽看到一个盘子，就报警了。为什么？', h: '盘子状态是"机关"', a: '她离家前布置了干净/特定位置的盘子，状态改变证明有人来过。' },
     { s: '沙漠中一人死亡，旁边沙地有一顶帽子。他怎么死的？', h: '热气球常识', a: '热气球减重时他被抛下，帽子是同伴掉落。' },
-    { s: '密室中男子上吊自杀，现场只有一块冰和一根绳子。如何做到的？', h: '冰的用途', a: '他踩着大冰块，冰融化后形成“密室”。' },
-    { s: '劫匪试图抢银行，职员说了一句话后他灰溜溜离开。职员说了什么？', h: '地点/身份错位', a: '“这里是警察局/爸爸别闹了”等，使其立即放弃。' },
+    { s: '密室中男子上吊自杀，现场只有一块冰和一根绳子。如何做到的？', h: '冰的用途', a: '他踩着大冰块，冰融化后形成"密室"。' },
+    { s: '劫匪试图抢银行，职员说了一句话后他灰溜溜离开。职员说了什么？', h: '地点/身份错位', a: '"这里是警察局/爸爸别闹了"等，使其立即放弃。' },
     { s: '两人点了同样的饮料，一个很快喝完安然无恙，另一个只喝一口就死了。饮料都没毒。为什么？', h: '激活条件', a: '毒素需与酒精反应/时间激活，快喝的人反而避过激活并吐出。' },
-    { s: '男人死在书房，背上插刀，桌上纸写着“7891011”，门窗反锁。凶手是谁？', h: '数字换一种读法', a: '7、8、9、10、J（十一）指向“Jack”。' },
+    { s: '男人死在书房，背上插刀，桌上纸写着"7891011"，门窗反锁。凶手是谁？', h: '数字换一种读法', a: '7、8、9、10、J（十一）指向"Jack"。' },
     { s: '男人在雨中走很久，头发全湿，衣服却没湿。为什么？', h: '文字游戏', a: '他是秃头/用伞遮住衣服。' },
     { s: '电梯里的男人：独自时能到十楼，有别人时只能到七楼。为什么？', h: '与前题同理', a: '身高不够，独自时敢跳着按10楼；有人时不好意思跳。' },
-    { s: '一个人的手上有伤口，但一点也不觉得痛。为什么？', h: '“他”的指代', a: '伤口在病人手上，他是外科医生。' },
+    { s: '一个人的手上有伤口，但一点也不觉得痛。为什么？', h: '"他"的指代', a: '伤口在病人手上，他是外科医生。' },
     { s: '谋杀案唯一目击者是盲人，却准确描述凶手外貌。为什么？', h: '时间线反转', a: '他作案前并不盲，是被凶手弄瞎的，之前已看见面貌。' },
     { s: '两人互送礼物，不久一人死，另一人也自杀。为什么？', h: '礼物并不友善', a: '互送毒物/毒酒，一人先死，另一人绝望自尽。' },
     { s: '空房间里一名死者，只有一根木梁和一小滩水。他怎么死的？', h: '不是上吊套路', a: '被困冷库内冻死，水是携带冰块融化，木梁是撬门未遂。' },
-    { s: '一个人看完信后跳桥自尽。为什么？', h: '海难生还秘密', a: '信揭示救生艇“抽签”是骗局，他靠同伴牺牲活下来，愧疚自尽。' }
+    { s: '一个人看完信后跳桥自尽。为什么？', h: '海难生还秘密', a: '信揭示救生艇"抽签"是骗局，他靠同伴牺牲活下来，愧疚自尽。' }
   ];
   let soupIndex = 0;
   function initSoup() {
@@ -2373,9 +2370,6 @@
   const selectPetDialog = document.getElementById('select-pet-dialog');
   const selectPetList = document.getElementById('select-pet-list');
   const selectPetCancel = document.getElementById('select-pet-cancel');
-
-
-
 
   // 头像点击事件 - 显示选择OC弹窗
   petAvatar && petAvatar.addEventListener('click', (e) => {
@@ -2515,8 +2509,6 @@
     }
   }, { passive: true });
 
-
-
   // 同步移动端OC列表
   function syncMobilePetList() {
     const mobilePetList = document.getElementById('mobile-pet-list');
@@ -2640,7 +2632,7 @@
     const rect = stageEl.getBoundingClientRect();
     // 数量更大、更密集
     const count = kind === 'clean' ? 48 : (kind === 'feed' ? 40 : 32);
-    // 使用二维网格+抖动，做“满天星”分布
+    // 使用二维网格+抖动，做"满天星"分布
     const rows = Math.max(1, Math.round(Math.sqrt(count)));
     const cols = Math.max(1, Math.ceil(count / rows));
     const cellW = rect.width / cols;
@@ -2900,7 +2892,7 @@
     '世界偶尔很糟糕，但你让我觉得温暖～ (｡･ω･｡)ﾉ♡',
     '抱抱你，乌云总会散开的！ (っ´▽｀)っ',
     '嘿嘿，偷偷告诉你——其实我最喜欢你啦！ (｡•̀ᴗ-)✧',
-    '猜猜我在想什么？——是“想见你”！ (◕‿◕✿)',
+    '猜猜我在想什么？——是"想见你"！ (◕‿◕✿)',
     '再不理我，我就要闹了哦！ (｀ε´)',
     '叮咚！你收到了一只快乐小狗，请签收～ 🐶(＾▽＾)',
     '今天不夸我可爱的话，我就……就哭给你看！ (╥﹏╥)',
@@ -2934,8 +2926,8 @@
     '警告！检测到主人电量不足，快充电！（塞零食） (｀・ω・´)',
     '必杀技——无敌抱抱拳！ (っ´▽｀)っ',
     '紧急通知！你被逮捕了，罪名是……太可爱！ (｀ε´)',
-    '如果我是冰淇淋，那一定是你的“最喜欢”口味！ 🍦(｡♥‿♥｡)',
-    '叮！系统提示：今日份的“喜欢你”已送达～ (๑˃̵ᴗ˂̵)و',
+    '如果我是冰淇淋，那一定是你的"最喜欢"口味！ 🍦(｡♥‿♥｡)',
+    '叮！系统提示：今日份的"喜欢你"已送达～ (๑˃̵ᴗ˂̵)و',
     '我是小怪兽，但只想被你驯服～ 🦖(◕‿◕✿)',
     '警告！你的可爱度超标，需要我亲亲才能解决！ ( ˘ ³˘)♥',
     '即使全世界否定你，我也会站在你这边！♡ (｡♡‿♡｡)',
@@ -2972,9 +2964,9 @@
     const time = `${hh}:${mm}`;
     const pet = state.pets.find((p) => p.id === state.selectedPetId);
     const petName = pet?.name || '小OC';
-    const safeName = String(petName).replace(/[“”"'\u201C\u201D]/g, '');
+    const safeName = String(petName).replace(/["""'\u201C\u201D]/g, '');
 
-    // 将直白文案转为可爱语气，不带上名字前缀
+    // 可爱语气，不带上名字前缀
     let cute = message;
     if (message.includes('投喂')) {
       cute = `给${safeName}投喂，咔嚓咔嚓真香！🍖`;
@@ -3163,39 +3155,16 @@
   }
 
   // 聊天入口
-  openChatBtn && openChatBtn.addEventListener('click', () => {
-    const pet = state.pets.find((p) => p.id === state.selectedPetId);
-    const pid = pet?.id || '';
-    
-    // 更稳健的URL构造：确保正确跳转到聊天页面
-    let chatUrl;
-    try {
-      const currentPath = location.pathname;
-      const basePath = currentPath.replace(/\/index\.html$/i, '').replace(/\/$/, '');
-    const chatPath = basePath + (basePath.endsWith('/') ? 'chat.html' : '/chat.html');
-      chatUrl = new URL(chatPath, location.origin);
-      
-      // 如果构造的URL看起来不对，使用备用方案
-      if (!chatUrl.pathname.includes('chat.html')) {
-        chatUrl = new URL('./chat.html', location.href);
-      }
-    } catch (err) {
-      console.error('聊天URL构造失败:', err);
-      chatUrl = new URL('./chat.html', location.href);
-    }
-    
-    if (pid) chatUrl.searchParams.set('pet', pid);
-    console.log('跳转到聊天页面:', chatUrl.toString());
-    
-    // 同窗口跳转，保留历史记录，便于手机返回到主页面
-    try {
-      location.href = chatUrl.toString();
-    } catch (err) {
-      console.error('聊天页面跳转失败:', err);
-      // 备用方案：直接使用相对路径
-      const fallbackUrl = `./chat.html${pid ? `?pet=${pid}` : ''}`;
-      console.log('使用备用方案跳转:', fallbackUrl);
-      location.href = fallbackUrl;
+  openChatBtn && openChatBtn.addEventListener('click', (e) => {
+    try { e.preventDefault(); } catch (_) {}
+    const appRoot = document.getElementById('app');
+    const chatPage = document.getElementById('chat-page');
+    if (appRoot && chatPage) {
+      appRoot.style.display = 'none';
+      chatPage.classList.remove('hidden');
+      chatPage.setAttribute('aria-hidden', 'false');
+      const chatInputEl = document.getElementById('chat-input');
+      if (chatInputEl) { try { chatInputEl.focus(); } catch (_) {} }
     }
   });
 
@@ -4216,6 +4185,294 @@
       }, delay + duration + 1000);
     }
   }
+  // ===== In-page Chat Integration =====
+  (function integrateChatInPage() {
+    const CHAT_STORAGE_KEY = 'oc-pet-system/chat';
+    const AI_SETTINGS_KEY = 'oc-pet-system/ai-settings';
+
+    const $id = (s) => document.getElementById(s);
+    const appRoot = $id('app');
+    const chatPage = $id('chat-page');
+    if (!chatPage) return;
+
+    const chatMessagesEl = $id('chat-messages');
+    const chatInputEl = $id('chat-input');
+    const chatSendBtn = $id('chat-send');
+    const chatSettingsBtn = $id('chat-settings');
+    const chatBackBtn = $id('chat-back-btn');
+    const chatTitleEl = $id('chat-title');
+    const chatPersonalityBtn = $id('chat-personality-btn');
+
+    function loadStateChat() {
+      try { return JSON.parse(localStorage.getItem('oc-pet-system/v1') || '{}'); } catch(_) { return {}; }
+    }
+    function loadChat() { try { return JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}'); } catch(_) { return {}; } }
+    function saveChat(s) { try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(s||{})); } catch(_) {} }
+    function loadAi() { try { return JSON.parse(localStorage.getItem(AI_SETTINGS_KEY) || '{}'); } catch(_) { return {}; } }
+    function loadPersonality() { try { return JSON.parse(localStorage.getItem('oc-pet-system/personality') || '{}'); } catch(_) { return {}; } }
+    function savePersonality(s) { try { localStorage.setItem('oc-pet-system/personality', JSON.stringify(s||{})); } catch(_) {} }
+    function loadInteractionLog() { try { return JSON.parse(localStorage.getItem('oc-pet-system/interaction-log') || '{}'); } catch(_) { return {}; } }
+
+    let chatState = loadChat();
+    let isSending = false;
+    let thinkingPetId = null;
+
+    function getCurrentPetId() {
+      const st = loadStateChat();
+      return st?.selectedPetId || '';
+    }
+
+    function getRecentInteractions() {
+      const currentPetId = getCurrentPetId();
+      const interactionLog = loadInteractionLog();
+      const petInteractions = interactionLog[currentPetId] || [];
+      const recentInteractions = petInteractions.slice(-10);
+      if (recentInteractions.length === 0) return '';
+      const interactionMap = { feed: '投喂', clean: '清洁', sleep: '睡觉', play: '玩耍', riddle: '猜谜语', joke: '讲笑话', soup: '海龟汤', number: '猜数字' };
+      const formatted = recentInteractions.map(i => {
+        const action = interactionMap[i.action] || i.action;
+        const time = new Date(i.timestamp).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `${time}：${action}`;
+      });
+      return `最近的互动记录：${formatted.join('、')}。`;
+    }
+
+    function renderChat() {
+      const currentPetId = getCurrentPetId();
+      if (!chatMessagesEl || !currentPetId) return;
+      const history = (chatState[currentPetId] || []).slice(-200);
+      chatMessagesEl.innerHTML = '';
+      for (const m of history) {
+        const div = document.createElement('div');
+        div.className = 'chat-line ' + (m.role === 'user' ? 'from-user' : 'from-ai');
+        div.textContent = m.content;
+        chatMessagesEl.appendChild(div);
+      }
+      if (thinkingPetId === currentPetId) {
+        const st = loadStateChat();
+        const pet = (st?.pets || []).find(p => p.id === currentPetId);
+        if (pet) {
+          const thinkingDiv = document.createElement('div');
+          thinkingDiv.className = 'chat-line from-ai thinking';
+          thinkingDiv.innerHTML = `<span class="thinking-text">${pet.name}正在思考中...</span><span class="thinking-dots">...</span>`;
+          chatMessagesEl.appendChild(thinkingDiv);
+        }
+      }
+      if (thinkingPetId === currentPetId && history.length > 0) {
+        const lastMessage = history[history.length - 1];
+        if (lastMessage.role === 'assistant') { setTimeout(() => { thinkingPetId = null; renderChat(); }, 0); }
+      }
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    function updateChatTitle() {
+      const currentPetId = getCurrentPetId();
+      const st = loadStateChat();
+      const pet = (st?.pets || []).find(p => p.id === currentPetId);
+      if (chatTitleEl && pet) chatTitleEl.textContent = pet.name;
+    }
+
+    function clearThinkingState() {
+      thinkingPetId = null; isSending = false;
+      try { if (chatInputEl) chatInputEl.disabled = false; } catch(_) {}
+      try { if (chatSendBtn) { chatSendBtn.disabled = false; chatSendBtn.textContent = chatSendBtn.dataset.prevText || '发送'; delete chatSendBtn.dataset.prevText; } } catch(_) {}
+      chatInputEl && chatInputEl.focus();
+    }
+
+    async function sendChat() {
+      const currentPetId = getCurrentPetId();
+      const st = loadStateChat();
+      const pet = (st?.pets || []).find(p => p.id === currentPetId);
+      if (!pet) { alert('未找到OC'); return; }
+      const content = (chatInputEl?.value || '').trim();
+      if (!content || isSending) return;
+      chatInputEl.value = '';
+      try { chatInputEl.disabled = true; } catch(_) {}
+      try { if (chatSendBtn) { chatSendBtn.disabled = true; chatSendBtn.dataset.prevText = chatSendBtn.textContent||''; chatSendBtn.textContent = '发送中…'; } } catch(_) {}
+
+      chatState[currentPetId] = chatState[currentPetId] || [];
+      chatState[currentPetId].push({ role: 'user', content, ts: Date.now() });
+      saveChat(chatState);
+      renderChat();
+
+      thinkingPetId = currentPetId;
+      renderChat();
+      isSending = true;
+
+      const settings = loadAi();
+      const baseUrl = (settings.baseUrl || '').replace(/\/$/, '');
+      const path = settings.path || '/v1/chat/completions';
+      const model = settings.model || 'gpt-3.5-turbo';
+      const apiKey = settings.apiKey || '';
+      if (!baseUrl || !apiKey) {
+        chatState[currentPetId].push({ role: 'assistant', content: '请先在底部栏设置里配置 AI 接入信息～', ts: Date.now() });
+        saveChat(chatState); renderChat(); clearThinkingState(); return;
+      }
+
+      const personality = loadPersonality();
+      const petPersonality = personality[currentPetId] || {};
+      const traits = petPersonality.traits || '';
+      const speech = petPersonality.speech || '';
+      const hobbies = petPersonality.hobbies || '';
+      const background = petPersonality.background || '';
+      let personalityDesc = '';
+      if (traits) personalityDesc += `性格特点：${traits}。`;
+      if (speech) personalityDesc += `说话风格：${speech}。`;
+      if (hobbies) personalityDesc += `兴趣爱好：${hobbies}。`;
+      if (background) personalityDesc += `背景设定：${background}。`;
+      const recentInteractions = getRecentInteractions();
+      const sys = `你现在是用户的OC角色"${pet.name}"（物种：${pet.species}${pet.stage ? '，时期：' + pet.stage : ''}）。${personalityDesc}${recentInteractions}用可爱、贴心、简短的中文第一人称回复，严格符合该OC的个性设定。你可以自然地提及最近的互动经历，让对话更有连贯性和真实感。`;
+      const recent = (chatState[currentPetId] || []).slice(-20).map(m => ({ role: m.role, content: m.content }));
+      const messages = [{ role: 'system', content: sys }, ...recent];
+
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+      if (/openrouter\.ai$/i.test(baseUrl.replace(/^https?:\/\//, '').split('/')[0])) {
+        headers['HTTP-Referer'] = (location?.origin || 'http://localhost');
+        headers['X-Title'] = (document?.title || 'OC Chat');
+      }
+
+      const body = JSON.stringify({ model, messages, temperature: 0.8, stream: false });
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+      const maxRetries = 3; let attempt = 0; let data = null;
+      while (attempt <= maxRetries) {
+        const resp = await fetch(baseUrl + path, { method: 'POST', headers, body });
+        if (resp.ok) { data = await resp.json(); break; }
+        if (resp.status === 429 || resp.status >= 500) {
+          if (attempt < maxRetries) {
+            const ra = Number(resp.headers.get('Retry-After'));
+            const backoff = !Number.isNaN(ra) && ra > 0 ? ra * 1000 : (800 * Math.pow(2, attempt)) + Math.floor(Math.random()*300);
+            await sleep(backoff); attempt++; continue;
+          }
+        }
+        let detail = ''; try { const j = await resp.json(); detail = j?.error?.message || j?.message || ''; } catch(_) {}
+        let msg = `请求失败 (HTTP ${resp.status})`; if (resp.status===401) msg='认证失败：检查API Key。'; else if (resp.status===402) msg='额度不足：请充值或更换接口。'; else if (resp.status===403) msg='无权限：检查模型/白名单。'; else if (resp.status===429) msg='限流：稍后重试。'; else if (resp.status>=500) msg='服务端异常：稍后再试。';
+        chatState[currentPetId].push({ role: 'assistant', content: msg + (detail ? ' 详情：' + detail : ''), ts: Date.now() });
+        saveChat(chatState); renderChat(); clearThinkingState(); return;
+      }
+      const reply = data?.choices?.[0]?.message?.content || '（没有返回内容）';
+      chatState[currentPetId].push({ role: 'assistant', content: reply, ts: Date.now() });
+      saveChat(chatState); renderChat();
+      clearThinkingState();
+    }
+
+    function showChatPage() {
+      if (appRoot) appRoot.style.display = 'none';
+      chatPage.classList.remove('hidden');
+      chatPage.setAttribute('aria-hidden', 'false');
+      updateChatTitle();
+      renderChat();
+      chatInputEl && chatInputEl.focus();
+    }
+    function hideChatPage() {
+      chatPage.classList.add('hidden');
+      chatPage.setAttribute('aria-hidden', 'true');
+      if (appRoot) appRoot.style.display = '';
+    }
+
+    // Bind buttons
+    document.getElementById('open-chat-btn')?.addEventListener('click', (e) => {
+      try { e.preventDefault(); } catch(_) {}
+      showChatPage();
+    });
+    chatBackBtn && chatBackBtn.addEventListener('click', () => hideChatPage());
+    chatSendBtn && chatSendBtn.addEventListener('click', sendChat);
+    chatInputEl && chatInputEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChat(); });
+
+    // Personality dialog
+    function openPersonalityDialog() {
+      const dlg = $id('personality-dialog');
+      const traitsEl = $id('personality-traits');
+      const speechEl = $id('personality-speech');
+      const hobbiesEl = $id('personality-hobbies');
+      const backgroundEl = $id('personality-background');
+      const currentPetId = getCurrentPetId();
+      if (!dlg || !traitsEl || !speechEl || !hobbiesEl || !backgroundEl || !currentPetId) return;
+      const personality = loadPersonality();
+      const petPersonality = personality[currentPetId] || {};
+      traitsEl.value = petPersonality.traits || '';
+      speechEl.value = petPersonality.speech || '';
+      hobbiesEl.value = petPersonality.hobbies || '';
+      backgroundEl.value = petPersonality.background || '';
+      try { dlg.showModal(); } catch (_) { dlg.setAttribute('open','true'); }
+    }
+    function closePersonalityDialog() { const dlg = $id('personality-dialog'); if (!dlg) return; dlg.close && dlg.close(); dlg.removeAttribute('open'); }
+    chatPersonalityBtn && chatPersonalityBtn.addEventListener('click', () => openPersonalityDialog());
+    document.getElementById('personality-cancel')?.addEventListener('click', () => closePersonalityDialog());
+    document.getElementById('add-sample-interactions')?.addEventListener('click', () => {
+      const currentPetId = getCurrentPetId();
+      if (!currentPetId) return;
+      const interactionLog = loadInteractionLog();
+      const petInteractions = interactionLog[currentPetId] || [];
+      const newInteractions = [
+        { action: 'feed', message: '投喂', timestamp: Date.now() - 7200000 },
+        { action: 'play', message: '玩耍', timestamp: Date.now() - 5400000 },
+        { action: 'clean', message: '清洁', timestamp: Date.now() - 3600000 },
+        { action: 'sleep', message: '睡觉', timestamp: Date.now() - 1800000 },
+        { action: 'riddle', message: '猜谜语', timestamp: Date.now() - 900000 },
+      ];
+      interactionLog[currentPetId] = [...petInteractions, ...newInteractions];
+      try { localStorage.setItem('oc-pet-system/interaction-log', JSON.stringify(interactionLog)); alert('已添加示例互动记录！现在AI会记住这些互动。'); } catch (err) { console.error('添加示例互动记录失败:', err); alert('添加失败，请重试'); }
+    });
+    document.getElementById('personality-save')?.addEventListener('click', () => {
+      const currentPetId = getCurrentPetId(); if (!currentPetId) return;
+      const traitsEl = $id('personality-traits');
+      const speechEl = $id('personality-speech');
+      const hobbiesEl = $id('personality-hobbies');
+      const backgroundEl = $id('personality-background');
+      const personality = loadPersonality();
+      personality[currentPetId] = {
+        traits: (traitsEl?.value || '').trim(),
+        speech: (speechEl?.value || '').trim(),
+        hobbies: (hobbiesEl?.value || '').trim(),
+        background: (backgroundEl?.value || '').trim()
+      };
+      savePersonality(personality);
+      closePersonalityDialog();
+      alert('OC人设信息已保存');
+    });
+
+    // AI settings dialog
+    function openAiSettingsDialog() {
+      const dlg = $id('ai-settings-dialog');
+      const providerEl = $id('ai-provider');
+      const baseEl = $id('ai-base-url');
+      const pathEl = $id('ai-path');
+      const modelEl = $id('ai-model');
+      const keyEl = $id('ai-api-key');
+      if (!dlg || !baseEl || !pathEl || !modelEl || !keyEl) return;
+      const s = loadAi();
+      if (providerEl) providerEl.value = s.provider || 'custom';
+      baseEl.value = s.baseUrl || '';
+      pathEl.value = s.path || '/v1/chat/completions';
+      modelEl.value = s.model || 'gpt-3.5-turbo';
+      keyEl.value = s.apiKey || '';
+      try { dlg.showModal(); } catch (_) { dlg.setAttribute('open','true'); }
+    }
+    function closeAiSettingsDialog() { const dlg = $id('ai-settings-dialog'); if (!dlg) return; dlg.close && dlg.close(); dlg.removeAttribute('open'); }
+    chatSettingsBtn && chatSettingsBtn.addEventListener('click', () => openAiSettingsDialog());
+    document.getElementById('ai-settings-cancel')?.addEventListener('click', () => closeAiSettingsDialog());
+    document.getElementById('ai-settings-save')?.addEventListener('click', () => {
+      const providerEl = $id('ai-provider');
+      const baseEl = $id('ai-base-url');
+      const pathEl = $id('ai-path');
+      const modelEl = $id('ai-model');
+      const keyEl = $id('ai-api-key');
+      const provider = (providerEl?.value || 'custom');
+      let baseUrl = (baseEl?.value || '').trim();
+      let path = (pathEl?.value || '').trim();
+      let model = (modelEl?.value || '').trim();
+      if (provider === 'openai') { baseUrl = baseUrl || 'https://api.openai.com'; path = path || '/v1/chat/completions'; model = model || 'gpt-3.5-turbo'; }
+      else if (provider === 'openrouter') { baseUrl = baseUrl || 'https://openrouter.ai'; path = path || '/api/v1/chat/completions'; model = model || 'openrouter/auto'; }
+      else if (provider === 'siliconflow') { baseUrl = baseUrl || 'https://api.siliconflow.cn'; path = path || '/v1/chat/completions'; model = model || 'Qwen/Qwen2.5-7B-Instruct'; }
+      else { baseUrl = baseUrl || ''; path = path || '/v1/chat/completions'; model = model || 'gpt-3.5-turbo'; }
+      const v = { provider, baseUrl, path, model, apiKey: (keyEl?.value || '').trim() };
+      try { localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(v)); } catch (_) {}
+      closeAiSettingsDialog();
+      alert('AI 接入信息已保存');
+    });
+
+    // Init title and messages once
+    updateChatTitle();
+    renderChat();
+  })();
 })();
-
-

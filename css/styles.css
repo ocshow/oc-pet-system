@@ -1694,7 +1694,6 @@ body {
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
-  min-height: 80px;
 }
 
 .dialog .field input:focus, .dialog .field select:focus, .dialog .field textarea:focus {
